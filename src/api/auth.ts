@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  AuthError,
   AuthResponse,
   AuthTokenResponsePassword,
 } from "@supabase/supabase-js";
@@ -55,4 +56,16 @@ export async function signInWithEmail(
   }
 
   return data;
+}
+export function getAuthErrorMessage(error: unknown, fallback: string): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as AuthError).message === "string"
+  ) {
+    return (error as AuthError).message;
+  }
+
+  return fallback;
 }
