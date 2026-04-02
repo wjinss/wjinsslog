@@ -16,12 +16,10 @@ interface SignUpFormValues {
 }
 
 export function SignUpForm() {
-  const serverMessage = useSignUpForm((state) => state.serverMessage);
-  const isServerError = useSignUpForm((state) => state.isServerError);
-  const setServerFeedback = useSignUpForm((state) => state.setServerFeedback);
-  const clearServerFeedback = useSignUpForm(
-    (state) => state.clearServerFeedback,
-  );
+  const status = useSignUpForm((state) => state.status);
+  const message = useSignUpForm((state) => state.message);
+  const setFeedback = useSignUpForm((state) => state.setFeedback);
+  const clearFeedback = useSignUpForm((state) => state.clearFeedback);
 
   const {
     register,
@@ -45,20 +43,20 @@ export function SignUpForm() {
   });
 
   useEffect(() => {
-    clearServerFeedback();
-  }, [clearServerFeedback]);
+    clearFeedback();
+  }, [clearFeedback]);
 
   const onSubmit = async (values: SignUpFormValues) => {
-    clearServerFeedback();
+    clearFeedback();
 
     const result = await signUpWithEmailAction(values);
 
     if (result.status === "error") {
-      setServerFeedback(result.message, true);
+      setFeedback("error", result.message);
       return;
     }
 
-    setServerFeedback(result.message, false);
+    setFeedback("success", result.message);
     reset({
       ...values,
       password: "",
@@ -151,15 +149,15 @@ export function SignUpForm() {
         ) : null}
       </div>
 
-      {serverMessage ? (
+      {status !== "idle" && message ? (
         <p
           className={`rounded-lg px-3 py-2 text-sm ${
-            isServerError
+            status === "error"
               ? "bg-destructive/10 text-destructive"
               : "bg-primary/10 text-primary"
           }`}
         >
-          {serverMessage}
+          {message}
         </p>
       ) : null}
 

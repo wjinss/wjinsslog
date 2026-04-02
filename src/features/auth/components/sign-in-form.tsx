@@ -17,9 +17,10 @@ interface SignInFormValues {
 
 export function SignInForm() {
   const router = useRouter();
-  const serverError = useSignInForm((state) => state.serverError);
-  const setServerError = useSignInForm((state) => state.setServerError);
-  const clearServerError = useSignInForm((state) => state.clearServerError);
+  const status = useSignInForm((state) => state.status);
+  const message = useSignInForm((state) => state.message);
+  const setFeedback = useSignInForm((state) => state.setFeedback);
+  const clearFeedback = useSignInForm((state) => state.clearFeedback);
 
   const {
     register,
@@ -34,16 +35,16 @@ export function SignInForm() {
   });
 
   useEffect(() => {
-    clearServerError();
-  }, [clearServerError]);
+    clearFeedback();
+  }, [clearFeedback]);
 
   const onSubmit = async (values: SignInFormValues) => {
-    clearServerError();
+    clearFeedback();
 
     const result = await signInWithEmailAction(values);
 
     if (result.status === "error") {
-      setServerError(result.message);
+      setFeedback("error", result.message);
       return;
     }
 
@@ -99,9 +100,9 @@ export function SignInForm() {
         ) : null}
       </div>
 
-      {serverError ? (
+      {status === "error" && message ? (
         <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {serverError}
+          {message}
         </p>
       ) : null}
 
