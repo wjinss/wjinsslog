@@ -23,7 +23,7 @@ export function Header() {
             <Sun />
           </Button>
           <Button size="sm">
-            <Link href={ROUTES.login}>로그인</Link>
+            <Link href={ROUTES.signIn}>로그인</Link>
           </Button>
         </div>
       </div>
