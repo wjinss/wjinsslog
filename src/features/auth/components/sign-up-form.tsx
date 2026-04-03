@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+
 import { signUpWithEmailAction } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
-import { useSignUpForm } from "@/features/auth/hooks/use-auth-form-state";
 
 interface SignUpFormValues {
   email: string;
@@ -16,10 +16,8 @@ interface SignUpFormValues {
 }
 
 export function SignUpForm() {
-  const status = useSignUpForm((state) => state.status);
-  const message = useSignUpForm((state) => state.message);
-  const setFeedback = useSignUpForm((state) => state.setFeedback);
-  const clearFeedback = useSignUpForm((state) => state.clearFeedback);
+  const [serverMessage, setServerMessage] = useState<string>("");
+  const [isServerError, setIsServerError] = useState<boolean>(false);
 
   const {
     register,
@@ -42,21 +40,19 @@ export function SignUpForm() {
     name: "password",
   });
 
-  useEffect(() => {
-    clearFeedback();
-  }, [clearFeedback]);
-
   const onSubmit = async (values: SignUpFormValues) => {
-    clearFeedback();
+    setServerMessage("");
+    setIsServerError(false);
 
     const result = await signUpWithEmailAction(values);
 
     if (result.status === "error") {
-      setFeedback("error", result.message);
+      setIsServerError(true);
+      setServerMessage(result.message);
       return;
     }
 
-    setFeedback("success", result.message);
+    setServerMessage(result.message);
     reset({
       ...values,
       password: "",
@@ -112,7 +108,7 @@ export function SignUpForm() {
           type="password"
           autoComplete="new-password"
           className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
-          placeholder="6자 이상 입력해주세요"
+          placeholder="6자 이상"
           {...register("password", {
             required: "비밀번호를 입력해주세요.",
             minLength: {
@@ -135,11 +131,11 @@ export function SignUpForm() {
           type="password"
           autoComplete="new-password"
           className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
-          placeholder="비밀번호를 재입력해주세요"
+          placeholder="비밀번호 재입력"
           {...register("passwordConfirm", {
-            required: "비밀번호를 재입력해주세요.",
+            required: "비밀번호 확인을 입력해주세요.",
             validate: (value) =>
-              value === passwordValue || "비밀번호가 일치하지 않습니다.",
+              value === passwordValue || "비밀번호 확인이 일치하지 않습니다.",
           })}
         />
         {errors.passwordConfirm ? (
@@ -149,19 +145,19 @@ export function SignUpForm() {
         ) : null}
       </div>
 
-      {status !== "idle" && message ? (
+      {serverMessage ? (
         <p
           className={`rounded-lg px-3 py-2 text-sm ${
-            status === "error"
+            isServerError
               ? "bg-destructive/10 text-destructive"
               : "bg-primary/10 text-primary"
           }`}
         >
-          {message}
+          {serverMessage}
         </p>
       ) : null}
 
-      <Button className="w-full h-10" type="submit" disabled={isSubmitting}>
+      <Button className="w-full" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "가입 중..." : "회원가입"}
       </Button>
 

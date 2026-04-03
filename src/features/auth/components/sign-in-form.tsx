@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { signInWithEmailAction } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
-import { useSignInForm } from "@/features/auth/hooks/use-auth-form-state";
 
 interface SignInFormValues {
   email: string;
@@ -17,10 +16,7 @@ interface SignInFormValues {
 
 export function SignInForm() {
   const router = useRouter();
-  const status = useSignInForm((state) => state.status);
-  const message = useSignInForm((state) => state.message);
-  const setFeedback = useSignInForm((state) => state.setFeedback);
-  const clearFeedback = useSignInForm((state) => state.clearFeedback);
+  const [serverError, setServerError] = useState<string>("");
 
   const {
     register,
@@ -34,17 +30,13 @@ export function SignInForm() {
     },
   });
 
-  useEffect(() => {
-    clearFeedback();
-  }, [clearFeedback]);
-
   const onSubmit = async (values: SignInFormValues) => {
-    clearFeedback();
+    setServerError("");
 
     const result = await signInWithEmailAction(values);
 
     if (result.status === "error") {
-      setFeedback("error", result.message);
+      setServerError(result.message);
       return;
     }
 
@@ -86,7 +78,7 @@ export function SignInForm() {
           type="password"
           autoComplete="current-password"
           className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
-          placeholder="비밀번호를 입력해주세요"
+          placeholder="비밀번호"
           {...register("password", {
             required: "비밀번호를 입력해주세요.",
             minLength: {
@@ -100,22 +92,19 @@ export function SignInForm() {
         ) : null}
       </div>
 
-      {status === "error" && message ? (
+      {serverError ? (
         <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {message}
+          {serverError}
         </p>
       ) : null}
 
-      <Button className="w-full h-10" type="submit" disabled={isSubmitting}>
+      <Button className="w-full" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "로그인 중..." : "로그인"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         아이디가 없으신가요?{" "}
-        <Link
-          href={ROUTES.signUp}
-          className="font-medium text-foreground underline"
-        >
+        <Link href={ROUTES.signUp} className="font-medium text-foreground underline">
           회원가입
         </Link>
       </p>
