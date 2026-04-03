@@ -1,0 +1,21 @@
+.markdown-body {
+  line-height: 1.8;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  margin-top: 1.4em;
+  margin-bottom: 0.6em;
+  font-weight: 700;
+}
+
+.markdown-body p {
+  margin-top: 0.8em;
+}
+
+.markdown-body code {
+  border-radius: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  background: color-mix(in oklab, var(--muted) 88%, transparent);
+}
