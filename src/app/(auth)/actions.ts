@@ -1,8 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import type { SignInWithEmailParams } from "@/api/auth";
+import { signInWithGitHubOAuth, type SignInWithEmailParams } from "@/api/auth";
 import { ROUTES } from "@/constants/routes";
 import {
   signInServerflow,
@@ -15,10 +16,52 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export type AuthActionState = AuthState;
 export type SignUpWithEmailActionParams = SignUpParams;
 
+function resolveRequestOrigin(headerStore: Headers): string {
+  const origin = headerStore.get("origin");
+  if (origin) return origin;
+
+  const host = (headerStore.get("x-forwarded-host") ?? headerStore.get("host"))
+    ?.split(",")[0]
+    ?.trim();
+
+  if (!host) {
+    return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  }
+
+  const forwardedProtocol = headerStore
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+
+  const protocol =
+    forwardedProtocol ??
+    (host.includes("localhost") || host.startsWith("127.0.0.1")
+      ? "http"
+      : "https");
+
+  return `${protocol}://${host}`;
+}
+
 export async function signInWithEmailAction(
   payload: SignInWithEmailParams,
 ): Promise<AuthActionState> {
   return signInServerflow(payload);
+}
+
+export async function signInWithGitHubAction(): Promise<void> {
+  const headerStore = await headers();
+  const origin = resolveRequestOrigin(headerStore);
+  const callbackUrl = new URL(ROUTES.authCallback, origin);
+
+  callbackUrl.searchParams.set("next", ROUTES.home);
+
+  const { url } = await signInWithGitHubOAuth("github", callbackUrl.toString());
+
+  if (!url) {
+    redirect(ROUTES.signIn);
+  }
+
+  redirect(url);
 }
 
 export async function signUpWithEmailAction(
