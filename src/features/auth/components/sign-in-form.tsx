@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -98,16 +97,9 @@ export function SignInForm() {
         </p>
       ) : null}
 
-      <Button className="w-full" type="submit" disabled={isSubmitting}>
+      <Button className="w-full h-10" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "로그인 중..." : "로그인"}
       </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        아이디가 없으신가요?{" "}
-        <Link href={ROUTES.signUp} className="font-medium text-foreground underline">
-          회원가입
-        </Link>
-      </p>
     </form>
   );
 }
