@@ -58,6 +58,7 @@ export async function signInWithEmail(
 
   return data;
 }
+
 export function getAuthErrorMessage(error: unknown, fallback: string): string {
   if (
     typeof error === "object" &&
@@ -71,17 +72,19 @@ export function getAuthErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export async function signInWithGitHubOAuth(
-  provider: Provider,
-  redirectTo?: string,
-) {
+export interface SignInWithOAuthParams {
+  provider: Provider;
+  redirectTo?: string;
+}
+
+export async function signInWithOAuth(params: SignInWithOAuthParams) {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: redirectTo
+    provider: params.provider,
+    options: params.redirectTo
       ? {
-          redirectTo,
+          redirectTo: params.redirectTo,
         }
       : undefined,
   });
