@@ -1,5 +1,8 @@
 import { PageContainer } from "@/components/layout/page-container";
+import GitHubSignIn from "@/components/ui/github-sign-In";
 import { SignInForm } from "@/features/auth/components/sign-in-form";
+import Link from "next/link";
+import { ROUTES } from "@/constants/routes";
 
 export default function SignInPage() {
   return (
@@ -9,6 +12,21 @@ export default function SignInPage() {
           <h1 className="text-2xl font-bold">로그인</h1>
         </header>
         <SignInForm />
+        <div className="flex items-center gap-3">
+          <div className="flex-1 border-t" />
+          <span className="text-sm text-muted-foreground">또는</span>
+          <div className="flex-1 border-t" />
+        </div>
+        <GitHubSignIn />
+        <p className="text-center text-sm text-muted-foreground">
+          아이디가 없으신가요?{" "}
+          <Link
+            href={ROUTES.signUp}
+            className="font-medium text-foreground underline"
+          >
+            회원가입
+          </Link>
+        </p>
       </div>
     </PageContainer>
   );
