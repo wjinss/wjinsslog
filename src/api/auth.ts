@@ -4,6 +4,7 @@ import type {
   AuthError,
   AuthResponse,
   AuthTokenResponsePassword,
+  Provider,
 } from "@supabase/supabase-js";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -68,4 +69,23 @@ export function getAuthErrorMessage(error: unknown, fallback: string): string {
   }
 
   return fallback;
+}
+
+export async function signInWithGitHubOAuth(
+  provider: Provider,
+  redirectTo?: string,
+) {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: redirectTo
+      ? {
+          redirectTo,
+        }
+      : undefined,
+  });
+
+  if (error) throw error;
+  return data;
 }
