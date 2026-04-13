@@ -1,8 +1,9 @@
 import { PageContainer } from "@/components/layout/page-container";
-import GitHubSignIn from "@/components/ui/github-sign-In";
+import GitHubSignIn from "@/features/auth/components/github-sign-In";
 import { SignInForm } from "@/features/auth/components/sign-in-form";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import GoogleSignIn from "@/features/auth/components/google-sign-in";
 
 export default function SignInPage() {
   return (
@@ -18,6 +19,7 @@ export default function SignInPage() {
           <div className="flex-1 border-t" />
         </div>
         <GitHubSignIn />
+        <GoogleSignIn />
         <p className="text-center text-sm text-muted-foreground">
           아이디가 없으신가요?{" "}
           <Link
