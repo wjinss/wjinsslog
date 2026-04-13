@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { signInWithGitHubOAuth, type SignInWithEmailParams } from "@/api/auth";
+import { signInWithOAuth, type SignInWithEmailParams } from "@/api/auth";
 import { ROUTES } from "@/constants/routes";
 import {
   signInServerflow,
@@ -48,20 +48,33 @@ export async function signInWithEmailAction(
   return signInServerflow(payload);
 }
 
-export async function signInWithGitHubAction(): Promise<void> {
+async function signInWithProviderAction(
+  provider: "github" | "google",
+): Promise<void> {
   const headerStore = await headers();
   const origin = resolveRequestOrigin(headerStore);
   const callbackUrl = new URL(ROUTES.authCallback, origin);
 
   callbackUrl.searchParams.set("next", ROUTES.home);
 
-  const { url } = await signInWithGitHubOAuth("github", callbackUrl.toString());
+  const { url } = await signInWithOAuth({
+    provider,
+    redirectTo: callbackUrl.toString(),
+  });
 
   if (!url) {
     redirect(ROUTES.signIn);
   }
 
   redirect(url);
+}
+
+export async function signInWithGitHubAction(): Promise<void> {
+  await signInWithProviderAction("github");
+}
+
+export async function signInWithGoogleAction(): Promise<void> {
+  await signInWithProviderAction("google");
 }
 
 export async function signUpWithEmailAction(
