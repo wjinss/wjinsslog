@@ -13,14 +13,14 @@ export default async function ProfilePage() {
       <div className="mx-auto max-w-md flex flex-col gap-10">
         <section className="space-y-4 rounded-2xl border p-6">
           <h1 className="text-xl font-bold">내 프로필</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex gap-3">
             <UserAvatar
               src={viewer.avatarUrl}
               alt="내 프로필 이미지"
-              size={56}
+              size={100}
             />
             <div className="space-y-0.5">
-              <p className="text-sm text-muted-foreground">계정 정보</p>
+              <p className="text-sm text-muted-foreground">이름</p>
               <p className="font-medium">
                 {viewer.displayName ?? "이름 미설정"}
               </p>
@@ -32,10 +32,6 @@ export default async function ProfilePage() {
             <div>
               <dt className="text-muted-foreground">이메일</dt>
               <dd className="font-medium">{viewer.email ?? "-"}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">이름</dt>
-              <dd className="font-medium">{viewer.displayName ?? "-"}</dd>
             </div>
           </dl>
         </section>
