@@ -3,8 +3,6 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
-import { cn } from "@/lib/utils";
-
 export const DEFAULT_AVATAR_SRC = "/fallbackImage.webp";
 const SUPABASE_HOSTNAME = (() => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,15 +22,9 @@ interface UserAvatarProps {
   src?: string | null;
   alt: string;
   size?: number;
-  className?: string;
 }
 
-export function UserAvatar({
-  src,
-  alt,
-  size = 32,
-  className,
-}: UserAvatarProps) {
+export function UserAvatar({ src, alt, size = 32 }: UserAvatarProps) {
   const preferredSrc = useMemo(() => {
     if (!src) return DEFAULT_AVATAR_SRC;
 
@@ -66,10 +58,7 @@ export function UserAvatar({
 
   return (
     <span
-      className={cn(
-        "relative inline-flex overflow-hidden rounded-full border bg-muted",
-        className,
-      )}
+      className="relative inline-flex overflow-hidden rounded-full border border-gray-400"
       style={{ width: size, height: size }}
     >
       <Image

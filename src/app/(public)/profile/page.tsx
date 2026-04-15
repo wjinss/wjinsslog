@@ -13,7 +13,7 @@ export default async function ProfilePage() {
       <div className="mx-auto max-w-md flex flex-col gap-10">
         <section className="space-y-4 rounded-2xl border p-6">
           <h1 className="text-xl font-bold">내 프로필</h1>
-          <div className="flex gap-3">
+          <div className="flex gap-5">
             <UserAvatar
               src={viewer.avatarUrl}
               alt="내 프로필 이미지"
