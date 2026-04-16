@@ -5,6 +5,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { createPostAction } from "@/app/(admin)/editor/new/actions";
 import { Button } from "@/components/ui/button";
 import { ImageFileUpload } from "@/components/ui/image-file-upload";
+import { MarkdownEditor } from "@/features/posts/components/markdown-editor";
 import { TagInput } from "@/features/posts/components/tag-input";
 import type { NewPostFormValues } from "@/features/posts/types/new-post-form";
 
@@ -12,7 +13,10 @@ export function NewPostForm() {
   const formMethods = useForm<NewPostFormValues>({
     defaultValues: {
       title: "",
-      bodyMarkdown: "",
+      slug: "",
+      excerpt: "",
+      contentMd: "",
+      status: "draft",
       tags: "[]",
       tagInput: "",
     },
@@ -22,7 +26,12 @@ export function NewPostForm() {
 
   return (
     <FormProvider {...formMethods}>
-      <form action={createPostAction} className="space-y-5" noValidate>
+      <form
+        action={createPostAction}
+        className="space-y-5"
+        encType="multipart/form-data"
+        noValidate
+      >
         <div className="space-y-1.5">
           <label htmlFor="title" className="text-sm font-medium">
             제목
@@ -35,6 +44,48 @@ export function NewPostForm() {
             placeholder="제목을 입력해주세요"
             className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
             {...register("title")}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="slug" className="text-sm font-medium">
+            슬러그 (선택)
+          </label>
+          <input
+            id="slug"
+            type="text"
+            maxLength={150}
+            placeholder="예: nextjs-supabase-guide"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            {...register("slug")}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="status" className="text-sm font-medium">
+            상태
+          </label>
+          <select
+            id="status"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            {...register("status")}
+          >
+            <option value="draft">임시저장</option>
+            <option value="published">출간하기</option>
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="excerpt" className="text-sm font-medium">
+            요약 (선택)
+          </label>
+          <textarea
+            id="excerpt"
+            rows={3}
+            maxLength={500}
+            placeholder="목록/미리보기에 노출할 요약을 입력해주세요"
+            className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
+            {...register("excerpt")}
           />
         </div>
 
@@ -58,19 +109,7 @@ export function NewPostForm() {
           inputName="tagInput"
         />
 
-        <div className="space-y-1.5">
-          <label htmlFor="bodyMarkdown" className="text-sm font-medium">
-            본문 (Markdown)
-          </label>
-          <textarea
-            id="bodyMarkdown"
-            required
-            rows={16}
-            placeholder="오늘의 포스팅을 작성해주세요"
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
-            {...register("bodyMarkdown")}
-          />
-        </div>
+        <MarkdownEditor />
 
         <Button type="submit" className="h-10 w-full">
           포스트 저장
