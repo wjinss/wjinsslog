@@ -171,9 +171,13 @@ export async function updateProfileImageAction(
     data: { publicUrl },
   } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(filePath);
 
+  const avatarUrlWithVersion = `${publicUrl}${
+    publicUrl.includes("?") ? "&" : "?"
+  }v=${Date.now()}`;
+
   const { error: profileError } = await supabase
     .from("profiles")
-    .update({ avatar_url: publicUrl })
+    .update({ avatar_url: avatarUrlWithVersion })
     .eq("id", user.id);
 
   if (profileError) {
