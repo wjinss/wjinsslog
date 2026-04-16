@@ -29,7 +29,6 @@ export function NewPostForm() {
       <form
         action={createPostAction}
         className="space-y-5"
-        encType="multipart/form-data"
         noValidate
       >
         <div className="space-y-1.5">
