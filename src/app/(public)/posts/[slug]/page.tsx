@@ -8,8 +8,8 @@ import { formatTimeAgo } from "@/utils/date";
 interface PersistedPost {
   slug: string;
   title: string;
-  bodyMarkdown: string;
-  tags: string[];
+  contentMd: string;
+  excerpt: string | null;
   createdAt: string | null;
 }
 
@@ -21,20 +21,12 @@ function readString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function normalizeTags(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((tag): tag is string => typeof tag === "string");
-}
-
 async function getPostFromDatabase(slug: string): Promise<PersistedPost | null> {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("posts")
-      .select("slug, title, body_markdown, tags, created_at")
+      .select("slug, title, content_md, excerpt, created_at")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -45,17 +37,17 @@ async function getPostFromDatabase(slug: string): Promise<PersistedPost | null> 
     const row = data as Record<string, unknown>;
     const persistedSlug = readString(row.slug);
     const title = readString(row.title);
-    const bodyMarkdown = readString(row.body_markdown);
+    const contentMd = readString(row.content_md);
 
-    if (!persistedSlug || !title || !bodyMarkdown) {
+    if (!persistedSlug || !title || !contentMd) {
       return null;
     }
 
     return {
       slug: persistedSlug,
       title,
-      bodyMarkdown,
-      tags: normalizeTags(row.tags),
+      contentMd,
+      excerpt: readString(row.excerpt),
       createdAt: readString(row.created_at),
     };
   } catch {
@@ -80,21 +72,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                   : "-"}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {persistedPost.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-secondary px-2.5 py-1 text-xs"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
           </header>
 
           <section className="markdown-body rounded-xl border p-6">
             <div className="whitespace-pre-wrap leading-7">
-              {persistedPost.bodyMarkdown}
+              {persistedPost.contentMd}
             </div>
           </section>
         </article>
