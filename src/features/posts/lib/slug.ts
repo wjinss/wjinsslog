@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 interface GenerateUniquePostSlugParams {
   supabase: SupabaseClient;
   title: string;
+  requestedSlug?: string;
 }
 
 function buildFallbackSlug(): string {
@@ -12,7 +13,7 @@ function buildFallbackSlug(): string {
   return `post-${timestamp}`;
 }
 
-function slugify(input: string): string {
+export function sanitizePostSlug(input: string): string {
   const normalized = input
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -28,8 +29,10 @@ function slugify(input: string): string {
 export async function generateUniquePostSlug({
   supabase,
   title,
+  requestedSlug,
 }: GenerateUniquePostSlugParams): Promise<string> {
-  const baseSlug = slugify(title) || buildFallbackSlug();
+  const preferredSlug = sanitizePostSlug(requestedSlug ?? "");
+  const baseSlug = preferredSlug || sanitizePostSlug(title) || buildFallbackSlug();
 
   const { data, error } = await supabase
     .from("posts")
