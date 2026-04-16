@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { ROUTES } from "@/constants/routes";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
-import { generateUniquePostSlug } from "@/features/posts/lib/slug";
+import { generateUniquePostSlug, sanitizePostSlug } from "@/features/posts/lib/slug";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const MAX_TITLE_LENGTH = 150;
@@ -30,6 +30,206 @@ const POST_STATUSES = new Set(["draft", "published"] as const);
 function getFormString(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeTags(rawTags: unknown): string[] {
+  if (!Array.isArray(rawTags)) {
+    return [];
+  }
+
+  const normalizedTags: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rawTag of rawTags) {
+    if (typeof rawTag !== "string") {
+      continue;
+    }
+
+    const normalizedTag = rawTag.trim().replace(/\s+/g, "");
+    if (!normalizedTag) {
+      continue;
+    }
+
+    const dedupeKey = normalizedTag.toLocaleLowerCase("en-US");
+    if (seen.has(dedupeKey)) {
+      continue;
+    }
+
+    seen.add(dedupeKey);
+    normalizedTags.push(normalizedTag);
+  }
+
+  return normalizedTags;
+}
+
+function parseTagsFromFormData(
+  formData: FormData,
+  key: string = "tags",
+): string[] {
+  const rawValue = formData.get(key);
+
+  if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const parsedValue: unknown = JSON.parse(rawValue);
+    return normalizeTags(parsedValue);
+  } catch (error) {
+    console.warn("[createPostAction] invalid tags payload", {
+      key,
+      rawValue,
+      error,
+    });
+    return [];
+  }
+}
+
+type DatabaseId = string | number;
+
+interface TagSeed {
+  name: string;
+  slug: string;
+}
+
+interface PersistedTag {
+  id: DatabaseId;
+  slug: string;
+}
+
+function readDatabaseId(value: unknown): DatabaseId | null {
+  if (typeof value === "string" && value.length > 0) {
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  return null;
+}
+
+function createTagSlug(tag: string): string {
+  const sanitized = sanitizePostSlug(tag);
+  if (sanitized) {
+    return sanitized;
+  }
+
+  const codepointFallback = Array.from(tag.trim())
+    .map((char) => char.codePointAt(0)?.toString(16))
+    .filter((value): value is string => Boolean(value))
+    .join("-");
+
+  return codepointFallback ? `tag-${codepointFallback}` : "tag";
+}
+
+function buildTagSeeds(tags: string[]): TagSeed[] {
+  const seeds: TagSeed[] = [];
+  const seenSlugs = new Set<string>();
+
+  for (const tagName of tags) {
+    const slug = createTagSlug(tagName);
+    if (!slug || seenSlugs.has(slug)) {
+      continue;
+    }
+
+    seenSlugs.add(slug);
+    seeds.push({ name: tagName, slug });
+  }
+
+  return seeds;
+}
+
+async function ensureTags({
+  supabase,
+  tags,
+}: {
+  supabase: SupabaseClient;
+  tags: string[];
+}): Promise<PersistedTag[]> {
+  const seeds = buildTagSeeds(tags);
+  if (seeds.length === 0) {
+    return [];
+  }
+
+  const slugs = seeds.map((seed) => seed.slug);
+  const { error: upsertError } = await supabase.from("tags").upsert(seeds, {
+    onConflict: "slug",
+    ignoreDuplicates: true,
+  });
+
+  if (upsertError) {
+    console.error("[createPostAction] tags upsert failed", {
+      slugs,
+      error: upsertError,
+    });
+    return [];
+  }
+
+  const { data: selectedTags, error: selectTagsError } = await supabase
+    .from("tags")
+    .select("id, slug")
+    .in("slug", slugs);
+
+  if (selectTagsError || !Array.isArray(selectedTags)) {
+    console.error("[createPostAction] tags select failed", {
+      slugs,
+      error: selectTagsError,
+    });
+    return [];
+  }
+
+  const persistedTags: PersistedTag[] = [];
+
+  for (const row of selectedTags) {
+    if (!row || typeof row !== "object") {
+      continue;
+    }
+
+    const record = row as Record<string, unknown>;
+    const id = readDatabaseId(record.id);
+    const slug = typeof record.slug === "string" ? record.slug : null;
+
+    if (!id || !slug) {
+      continue;
+    }
+
+    persistedTags.push({ id, slug });
+  }
+
+  return persistedTags;
+}
+
+async function linkPostTags({
+  supabase,
+  postId,
+  tags,
+}: {
+  supabase: SupabaseClient;
+  postId: DatabaseId;
+  tags: PersistedTag[];
+}): Promise<void> {
+  if (tags.length === 0) {
+    return;
+  }
+
+  const links = tags.map((tag) => ({
+    post_id: postId,
+    tag_id: tag.id,
+  }));
+
+  const { error: linkError } = await supabase.from("post_tags").upsert(links, {
+    onConflict: "post_id,tag_id",
+    ignoreDuplicates: true,
+  });
+
+  if (linkError) {
+    console.error("[createPostAction] post_tags upsert failed", {
+      postId,
+      tagCount: tags.length,
+      error: linkError,
+    });
+  }
 }
 
 function validateImageFile(file: FormDataEntryValue | null): file is File {
@@ -183,7 +383,10 @@ export async function createPostAction(formData: FormData): Promise<void> {
   const excerptInput = getFormString(formData, "excerpt");
   const contentMd = getFormString(formData, "contentMd");
   const statusValue = getFormString(formData, "status");
+  const tags = parseTagsFromFormData(formData);
   const thumbnailFileEntry = formData.get("thumbnailFile");
+
+  console.info("[createPostAction] parsed tags", { count: tags.length, tags });
 
   if (!title || !contentMd) {
     console.error("[createPostAction] invalid form data", {
@@ -265,7 +468,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
       author_id: authorId,
       published_at: publishedAt,
     })
-    .select("slug")
+    .select("id, slug")
     .single();
 
   if (insertError) {
@@ -278,10 +481,36 @@ export async function createPostAction(formData: FormData): Promise<void> {
     redirect(`${ROUTES.newPost}?error=save_failed`);
   }
 
+  const insertedPostRecord =
+    insertedPost && typeof insertedPost === "object"
+      ? (insertedPost as Record<string, unknown>)
+      : null;
+  const postId = insertedPostRecord ? readDatabaseId(insertedPostRecord.id) : null;
   const redirectSlug =
-    insertedPost && typeof insertedPost === "object" && "slug" in insertedPost
-      ? String((insertedPost as { slug: string }).slug)
+    insertedPostRecord && typeof insertedPostRecord.slug === "string"
+      ? insertedPostRecord.slug
       : slug;
+
+  if (postId && tags.length > 0) {
+    const ensuredTags = await ensureTags({ supabase, tags });
+    await linkPostTags({
+      supabase,
+      postId,
+      tags: ensuredTags,
+    });
+
+    console.info("[createPostAction] post tags linked", {
+      postId,
+      requestedTagCount: tags.length,
+      linkedTagCount: ensuredTags.length,
+    });
+  } else {
+    console.info("[createPostAction] post tags skipped", {
+      reason: !postId ? "missing_post_id" : "empty_tags",
+      postId,
+      requestedTagCount: tags.length,
+    });
+  }
 
   redirect(`/posts/${redirectSlug}`);
 }
