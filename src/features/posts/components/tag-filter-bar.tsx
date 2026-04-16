@@ -22,12 +22,12 @@ export function TagFilterBar({ tags, activeTag }: TagFilterBarProps) {
         return (
           <Link
             key={tag}
-            href={`/?tag=${tag}`}
+            href={`/?tag=${encodeURIComponent(tag)}`}
             className={`rounded-full px-3 py-1 text-sm ${
               isActive ? "bg-primary text-primary-foreground" : "bg-secondary"
             }`}
           >
-            #{tag}
+            {tag}
           </Link>
         );
       })}
