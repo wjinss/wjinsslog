@@ -35,7 +35,7 @@ export function PostCard({ post }: PostCardProps) {
           {post.tags.map((tag) => (
             <Link
               key={tag}
-              href={`/?tag=${tag}`}
+              href={`/?tag=${encodeURIComponent(tag)}`}
               className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
             >
               #{tag}
