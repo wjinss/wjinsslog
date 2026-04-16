@@ -1,6 +1,6 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { PostFeed } from "@/features/posts/components/post-feed";
-import { mockPosts } from "@/features/posts/data/mock-posts";
+import { getPostFeedData } from "@/features/posts/lib/get-post-feed-data";
 
 interface TagPageProps {
   params: Promise<{ tag: string }>;
@@ -9,7 +9,20 @@ interface TagPageProps {
 export default async function TagPage({ params }: TagPageProps) {
   const { tag } = await params;
   const decodedTag = decodeURIComponent(tag);
-  const posts = mockPosts.filter((post) => post.tags.includes(decodedTag));
+  const postFeedResult = await getPostFeedData({ tag: decodedTag });
+
+  if (!postFeedResult.ok) {
+    return (
+      <PageContainer>
+        <section className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-5">
+          <h1 className="text-lg font-semibold">게시글을 불러오지 못했습니다.</h1>
+          <p className="text-sm text-muted-foreground">{postFeedResult.message}</p>
+        </section>
+      </PageContainer>
+    );
+  }
+
+  const { posts } = postFeedResult.data;
 
   return (
     <PageContainer>
