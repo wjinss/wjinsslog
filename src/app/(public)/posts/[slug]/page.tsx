@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 
 import { PageContainer } from "@/components/layout/page-container";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
@@ -129,10 +130,10 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           )}
         </header>
 
-        <section className="markdown-body rounded-xl border p-6">
-          <div className="whitespace-pre-wrap leading-7">
-            {persistedPost.contentMd}
-          </div>
+        <section className="rounded-xl border p-6">
+          <article className="prose max-w-none">
+            <ReactMarkdown>{persistedPost.contentMd}</ReactMarkdown>
+          </article>
         </section>
       </article>
     </PageContainer>
