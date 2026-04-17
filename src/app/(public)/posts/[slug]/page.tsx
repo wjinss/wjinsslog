@@ -43,7 +43,9 @@ function readId(value: unknown): string | null {
   return null;
 }
 
-async function getPostFromDatabase(slug: string): Promise<PersistedPost | null> {
+async function getPostFromDatabase(
+  slug: string,
+): Promise<PersistedPost | null> {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
@@ -73,7 +75,9 @@ async function getPostFromDatabase(slug: string): Promise<PersistedPost | null> 
       postIds: [id],
     });
 
-    const tags = loadedTags.ok ? loadedTags.tagNamesByPostId.get(id) ?? [] : [];
+    const tags = loadedTags.ok
+      ? (loadedTags.tagNamesByPostId.get(id) ?? [])
+      : [];
     const tagsLoadError = loadedTags.ok ? null : loadedTags.message;
 
     return {
@@ -108,14 +112,18 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           <h1 className="text-3xl font-bold">{persistedPost.title}</h1>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span>
-              {persistedPost.createdAt ? formatTimeAgo(persistedPost.createdAt) : "-"}
+              {persistedPost.createdAt
+                ? formatTimeAgo(persistedPost.createdAt)
+                : "-"}
             </span>
             <span>조회수 {persistedPost.viewsCount}</span>
             <span>좋아요 {persistedPost.likesCount}</span>
             <span>댓글 {persistedPost.commentsCount}</span>
           </div>
           {persistedPost.tagsLoadError ? (
-            <p className="text-sm text-destructive">{persistedPost.tagsLoadError}</p>
+            <p className="text-sm text-destructive">
+              {persistedPost.tagsLoadError}
+            </p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {persistedPost.tags.map((tag) => (
@@ -123,7 +131,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                   key={tag}
                   className="rounded-full bg-secondary px-2.5 py-1 text-xs"
                 >
-                  #{tag}
+                  {tag}
                 </span>
               ))}
             </div>

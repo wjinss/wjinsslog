@@ -18,7 +18,7 @@ export function PostCard({ post }: PostCardProps) {
             src={post.thumbnailUrl}
             alt={post.title}
             fill
-            className="object-contain p-8"
+            className="object-cover"
           />
         </div>
       </Link>
@@ -38,7 +38,7 @@ export function PostCard({ post }: PostCardProps) {
               href={`/?tag=${encodeURIComponent(tag)}`}
               className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
             >
-              #{tag}
+              {tag}
             </Link>
           ))}
         </div>
