@@ -15,8 +15,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     return (
       <PageContainer>
         <section className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-5">
-          <h1 className="text-lg font-semibold">게시글을 불러오지 못했습니다.</h1>
-          <p className="text-sm text-muted-foreground">{postFeedResult.message}</p>
+          <h1 className="text-lg font-semibold">
+            게시글을 불러오지 못했습니다.
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {postFeedResult.message}
+          </p>
         </section>
       </PageContainer>
     );
@@ -30,10 +34,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <PageContainer>
       <div className="space-y-6">
         <section className="space-y-2">
-          <h1 className="text-2xl font-bold md:text-3xl">
-            뭐라고 적을지 고민입니다
-          </h1>
-          <p className="text-sm text-muted-foreground">뚝딱뚝딱 만들어봅시다</p>
+          <h1 className="text-2xl font-bold md:text-2xl">DEVELOPMENT POSTS</h1>
         </section>
 
         <TagFilterBar tags={tags} activeTag={activeTag} />

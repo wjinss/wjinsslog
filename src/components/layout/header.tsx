@@ -16,9 +16,7 @@ export async function Header() {
     <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
         <Link href={ROUTES.home} className="flex items-center gap-2">
-          <div className="grid h-8 px-4 place-items-center rounded-md bg-primary text-primary-foreground text-sm font-normal">
-            wjinss.Log
-          </div>
+          <div className="font-bold text-xl">wjinss.log</div>
         </Link>
 
         <div className="flex items-center gap-4">
