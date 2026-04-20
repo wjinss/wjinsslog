@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { incrementPostViews } from "@/features/posts/lib/increment-post-views";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatTimeAgo } from "@/utils/date";
@@ -70,10 +71,16 @@ async function getPostFromDatabase(
       return null;
     }
 
-    const loadedTags = await loadPostTagNamesByPostIds({
-      supabase,
-      postIds: [id],
-    });
+    const [loadedTags, incrementedViewsCount] = await Promise.all([
+      loadPostTagNamesByPostIds({
+        supabase,
+        postIds: [id],
+      }),
+      incrementPostViews({
+        supabase,
+        slug: persistedSlug,
+      }),
+    ]);
 
     const tags = loadedTags.ok
       ? (loadedTags.tagNamesByPostId.get(id) ?? [])
@@ -86,7 +93,7 @@ async function getPostFromDatabase(
       title,
       contentMd,
       createdAt: readString(row.created_at),
-      viewsCount: readNumber(row.views_count),
+      viewsCount: incrementedViewsCount ?? readNumber(row.views_count),
       likesCount: readNumber(row.likes_count),
       commentsCount: readNumber(row.comments_count),
       tags,
