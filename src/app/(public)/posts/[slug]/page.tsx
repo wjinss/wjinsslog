@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { LikeButton } from "@/features/posts/components/like-button";
 import { incrementPostViews } from "@/features/posts/lib/increment-post-views";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,7 +16,9 @@ interface PersistedPost {
   createdAt: string | null;
   viewsCount: number;
   likesCount: number;
+  initialIsLiked: boolean;
   commentsCount: number;
+  viewerUserId: string | null;
   tags: string[];
   tagsLoadError: string | null;
 }
@@ -49,13 +52,17 @@ async function getPostFromDatabase(
 ): Promise<PersistedPost | null> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("posts")
-      .select(
-        "id, slug, title, content_md, created_at, views_count, likes_count, comments_count",
-      )
-      .eq("slug", slug)
-      .maybeSingle();
+    const [{ data, error }, { data: authData, error: authError }] =
+      await Promise.all([
+        supabase
+          .from("posts")
+          .select(
+            "id, slug, title, content_md, created_at, views_count, likes_count, comments_count",
+          )
+          .eq("slug", slug)
+          .maybeSingle(),
+        supabase.auth.getUser(),
+      ]);
 
     if (error || !data || typeof data !== "object") {
       return null;
@@ -71,7 +78,12 @@ async function getPostFromDatabase(
       return null;
     }
 
-    const [loadedTags, incrementedViewsCount] = await Promise.all([
+    const viewerUserId =
+      !authError && typeof authData.user?.id === "string"
+        ? authData.user.id
+        : null;
+
+    const [loadedTags, incrementedViewsCount, likedRow] = await Promise.all([
       loadPostTagNamesByPostIds({
         supabase,
         postIds: [id],
@@ -80,12 +92,29 @@ async function getPostFromDatabase(
         supabase,
         slug: persistedSlug,
       }),
+      viewerUserId
+        ? supabase
+            .from("post_likes")
+            .select("post_id")
+            .eq("post_id", id)
+            .eq("user_id", viewerUserId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
     const tags = loadedTags.ok
       ? (loadedTags.tagNamesByPostId.get(id) ?? [])
       : [];
     const tagsLoadError = loadedTags.ok ? null : loadedTags.message;
+
+    if (likedRow.error) {
+      console.error("[getPostFromDatabase] post like state query failed", {
+        message: likedRow.error.message,
+        code: likedRow.error.code,
+        postId: id,
+        userId: viewerUserId,
+      });
+    }
 
     return {
       id,
@@ -95,7 +124,9 @@ async function getPostFromDatabase(
       createdAt: readString(row.created_at),
       viewsCount: incrementedViewsCount ?? readNumber(row.views_count),
       likesCount: readNumber(row.likes_count),
+      initialIsLiked: Boolean(likedRow.data),
       commentsCount: readNumber(row.comments_count),
+      viewerUserId,
       tags,
       tagsLoadError,
     };
@@ -124,7 +155,12 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 : "-"}
             </span>
             <span>조회수 {persistedPost.viewsCount}</span>
-            <span>좋아요 {persistedPost.likesCount}</span>
+            <LikeButton
+              postId={persistedPost.id}
+              initialLikesCount={persistedPost.likesCount}
+              initialIsLiked={persistedPost.initialIsLiked}
+              viewerUserId={persistedPost.viewerUserId}
+            />
             <span>댓글 {persistedPost.commentsCount}</span>
           </div>
           {persistedPost.tagsLoadError ? (
