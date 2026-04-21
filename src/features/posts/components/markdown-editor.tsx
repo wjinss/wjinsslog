@@ -27,6 +27,18 @@ type AddImageBlobHook = (
   callback: (url: string, altText: string) => void,
 ) => Promise<void>;
 
+function clearEditorRoot(rootElement: HTMLDivElement | null) {
+  if (!rootElement) {
+    return;
+  }
+
+  try {
+    rootElement.replaceChildren();
+  } catch {
+    rootElement.textContent = "";
+  }
+}
+
 export function MarkdownEditor({
   name = "contentMd",
   label = "본문 (Markdown)",
@@ -57,6 +69,30 @@ export function MarkdownEditor({
       shouldTouch: true,
     });
   }, [name, setValue]);
+
+  const teardownEditor = useCallback(
+    (editor: Editor | null) => {
+      const rootElement = rootRef.current;
+      editorRef.current = null;
+
+      if (!editor) {
+        clearEditorRoot(rootElement);
+        return;
+      }
+
+      try {
+        editor.off("change", syncMarkdownFromEditor);
+        editor.destroy();
+      } catch (error) {
+        console.warn("[MarkdownEditor] editor destroy fallback", {
+          error,
+        });
+      } finally {
+        clearEditorRoot(rootElement);
+      }
+    },
+    [syncMarkdownFromEditor],
+  );
 
   const handleInsertMarkdownImage = useCallback<AddImageBlobHook>(
     async (blob, callback) => {
@@ -91,8 +127,15 @@ export function MarkdownEditor({
     let isUnmounted = false;
 
     const initializeEditor = async () => {
-      if (!rootRef.current) {
+      const rootElement = rootRef.current;
+      if (!rootElement) {
         return;
+      }
+
+      if (editorRef.current) {
+        teardownEditor(editorRef.current);
+      } else {
+        clearEditorRoot(rootElement);
       }
 
       const { default: ToastEditor } = await import("@toast-ui/editor");
@@ -124,14 +167,9 @@ export function MarkdownEditor({
 
     return () => {
       isUnmounted = true;
-
-      if (editorRef.current) {
-        editorRef.current.off("change", syncMarkdownFromEditor);
-        editorRef.current.destroy();
-        editorRef.current = null;
-      }
+      teardownEditor(editorRef.current);
     };
-  }, [handleInsertMarkdownImage, height, placeholder, syncMarkdownFromEditor]);
+  }, [handleInsertMarkdownImage, height, placeholder, teardownEditor]);
 
   return (
     <div className="space-y-1.5">
