@@ -12,16 +12,18 @@ interface PostCardProps {
 export function PostCard({ post }: PostCardProps) {
   return (
     <article className="overflow-hidden rounded-xl border bg-card">
-      <Link href={`/posts/${post.slug}`} className="block">
-        <div className="relative h-60 w-full bg-muted">
-          <Image
-            src={post.thumbnailUrl}
-            alt={post.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-      </Link>
+      {post.thumbnailUrl && (
+        <Link href={`/posts/${post.slug}`} className="block">
+          <div className="relative h-60 w-full bg-muted">
+            <Image
+              src={post.thumbnailUrl}
+              alt={post.title}
+              fill
+              className="object-cover"
+            />
+          </div>
+        </Link>
+      )}
 
       <div className="space-y-3 p-4">
         <Link href={`/posts/${post.slug}`} className="block">

@@ -12,7 +12,6 @@ import { sanitizePostSlug } from "@/features/posts/lib/slug";
 
 const POST_LIST_BASE_SELECT =
   "id, slug, title, excerpt, thumbnail_url, likes_count, views_count, comments_count, created_at";
-const FALLBACK_THUMBNAIL_URL = "/fallbackImage.webp";
 
 interface PostFeedData {
   posts: PostSummary[];
@@ -100,7 +99,7 @@ function mapRowToPostSummary(
     slug,
     title,
     excerpt: readString(row.excerpt) ?? "",
-    thumbnailUrl: readString(row.thumbnail_url) ?? FALLBACK_THUMBNAIL_URL,
+    thumbnailUrl: readString(row.thumbnail_url),
     likesCount: readNumber(row.likes_count),
     viewsCount: readNumber(row.views_count),
     commentsCount: readNumber(row.comments_count),

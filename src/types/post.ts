@@ -3,7 +3,7 @@ export interface PostSummary {
   slug: string;
   title: string;
   excerpt: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   likesCount: number;
   viewsCount: number;
   commentsCount: number;
