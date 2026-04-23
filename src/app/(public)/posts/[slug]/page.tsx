@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { PostCommentsSection } from "@/features/comments/components/post-comments-section";
+import { getPostComments } from "@/features/comments/lib/get-post-comments";
 import { LikeButton } from "@/features/posts/components/like-button";
 import { incrementPostViews } from "@/features/posts/lib/increment-post-views";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
@@ -143,6 +145,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound();
   }
 
+  const commentsResult = await getPostComments(persistedPost.id);
+  const visibleCommentsCount = commentsResult.errorMessage
+    ? persistedPost.commentsCount
+    : commentsResult.comments.length;
+
   return (
     <PageContainer>
       <article className="mx-auto max-w-3xl space-y-6">
@@ -161,7 +168,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               initialIsLiked={persistedPost.initialIsLiked}
               viewerUserId={persistedPost.viewerUserId}
             />
-            <span>댓글 {persistedPost.commentsCount}</span>
+            <span>댓글 {visibleCommentsCount}</span>
           </div>
           {persistedPost.tagsLoadError ? (
             <p className="text-sm text-destructive">
@@ -186,6 +193,15 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
             <ReactMarkdown>{persistedPost.contentMd}</ReactMarkdown>
           </article>
         </section>
+
+        <PostCommentsSection
+          postId={persistedPost.id}
+          postSlug={persistedPost.slug}
+          isAuthenticated={Boolean(persistedPost.viewerUserId)}
+          comments={commentsResult.comments}
+          count={visibleCommentsCount}
+          errorMessage={commentsResult.errorMessage}
+        />
       </article>
     </PageContainer>
   );
