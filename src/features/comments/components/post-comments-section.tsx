@@ -5,11 +5,11 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/constants/routes";
 import { createPostCommentAction } from "@/features/comments/actions/create-post-comment";
+import { PostCommentBody } from "@/features/comments/components/post-comment-body";
+import { PostCommentReplyPanel } from "@/features/comments/components/post-comment-reply-panel";
 import type { PostCommentItem } from "@/features/comments/lib/get-post-comments";
-import { formatTimeAgo } from "@/utils/date";
 
 interface PostCommentsSectionProps {
   postId: string;
@@ -103,28 +103,14 @@ export function PostCommentsSection({
         <ol className="mt-4 space-y-4">
           {comments.map((comment) => (
             <li key={comment.id} className="rounded-xl border bg-card/60 p-3">
-              <div className="flex items-start gap-2">
-                <UserAvatar
-                  src={comment.author.avatarUrl}
-                  alt={`${comment.author.displayName} 아바타`}
-                  size={35}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-2">
-                    <span className="text-sm font-semibold">
-                      {comment.author.displayName}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {comment.createdAt
-                        ? formatTimeAgo(comment.createdAt)
-                        : "-"}
-                    </span>
-                  </div>
-                  <p className="mt-1 whitespace-pre-wrap wrap-break-word text-sm leading-6 text-foreground">
-                    {comment.content}
-                  </p>
-                </div>
-              </div>
+              <PostCommentBody comment={comment} />
+              <PostCommentReplyPanel
+                postId={postId}
+                postSlug={postSlug}
+                parentCommentId={comment.id}
+                replies={comment.replies}
+                isAuthenticated={isAuthenticated}
+              />
             </li>
           ))}
         </ol>
