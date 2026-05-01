@@ -148,7 +148,10 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const commentsResult = await getPostComments(persistedPost.id);
   const visibleCommentsCount = commentsResult.errorMessage
     ? persistedPost.commentsCount
-    : commentsResult.comments.length;
+    : commentsResult.comments.reduce(
+        (count, comment) => count + 1 + comment.replies.length,
+        0,
+      );
 
   return (
     <PageContainer>
