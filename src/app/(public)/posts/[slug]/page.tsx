@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PostCommentsSection } from "@/features/comments/components/post-comments-section";
 import { getPostComments } from "@/features/comments/lib/get-post-comments";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
+import { DeletePostButton } from "@/features/posts/components/delete-post-button";
 import { LikeButton } from "@/features/posts/components/like-button";
 import { incrementPostViews } from "@/features/posts/lib/increment-post-views";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
@@ -223,21 +224,27 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h1 className="text-3xl font-bold">{persistedPost.title}</h1>
             {adminSession.isAdmin ? (
-              <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={
-                  <Link
-                    href={`/edit/${persistedPost.slug}`}
-                    aria-label={`${persistedPost.title} 수정하기`}
-                  />
-                }
-                className="self-start"
-              >
-                <Pencil />
-                수정
-              </Button>
+              <div className="flex flex-wrap items-start gap-2 self-start">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href={`/edit/${persistedPost.slug}`}
+                      aria-label={`${persistedPost.title} 수정하기`}
+                    />
+                  }
+                >
+                  <Pencil />
+                  수정
+                </Button>
+                <DeletePostButton
+                  postId={persistedPost.id}
+                  slug={persistedPost.slug}
+                  title={persistedPost.title}
+                />
+              </div>
             ) : null}
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
