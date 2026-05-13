@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PostSummary } from "@/types/post";
 
@@ -52,6 +54,16 @@ function readId(value: unknown): string | null {
 
 function readNumber(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function isMissingDeletedAtColumnError(error: PostgrestError): boolean {
+  const message = error.message.toLowerCase();
+
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    (message.includes("deleted_at") && message.includes("column"))
+  );
 }
 
 function normalizeTag(rawTag?: string): string | null {
@@ -108,6 +120,61 @@ function mapRowToPostSummary(
   };
 }
 
+async function selectPublishedPostRows({
+  supabase,
+  filteredPostIds,
+  excludeDeleted,
+}: {
+  supabase: SupabaseClient;
+  filteredPostIds: string[] | null;
+  excludeDeleted: boolean;
+}): Promise<{ data: unknown; error: PostgrestError | null }> {
+  let postsQuery = supabase
+    .from("posts")
+    .select(POST_LIST_BASE_SELECT)
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (excludeDeleted) {
+    postsQuery = postsQuery.is("deleted_at", null);
+  }
+
+  if (filteredPostIds) {
+    postsQuery = postsQuery.in("id", filteredPostIds);
+  }
+
+  const { data, error } = await postsQuery;
+  return { data, error };
+}
+
+async function loadPublishedPostRows({
+  supabase,
+  filteredPostIds,
+}: {
+  supabase: SupabaseClient;
+  filteredPostIds: string[] | null;
+}): Promise<{ data: unknown; error: PostgrestError | null }> {
+  const softDeleteAwareResult = await selectPublishedPostRows({
+    supabase,
+    filteredPostIds,
+    excludeDeleted: true,
+  });
+
+  if (
+    softDeleteAwareResult.error &&
+    isMissingDeletedAtColumnError(softDeleteAwareResult.error)
+  ) {
+    return selectPublishedPostRows({
+      supabase,
+      filteredPostIds,
+      excludeDeleted: false,
+    });
+  }
+
+  return softDeleteAwareResult;
+}
+
 export async function getPostFeedData({
   tag,
 }: {
@@ -158,13 +225,6 @@ export async function getPostFeedData({
       }
     }
 
-    let postsQuery = supabase
-      .from("posts")
-      .select(POST_LIST_BASE_SELECT)
-      .eq("status", "published")
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false });
-
     if (filteredPostIds) {
       if (filteredPostIds.length === 0) {
         const publishedTags = await loadPublishedTagNames({ supabase });
@@ -183,11 +243,12 @@ export async function getPostFeedData({
           },
         };
       }
-
-      postsQuery = postsQuery.in("id", filteredPostIds);
     }
 
-    const { data: rawPosts, error: postsError } = await postsQuery;
+    const { data: rawPosts, error: postsError } = await loadPublishedPostRows({
+      supabase,
+      filteredPostIds,
+    });
 
     if (postsError) {
       console.error("[getPostFeedData] posts query failed", {

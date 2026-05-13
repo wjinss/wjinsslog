@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Pencil } from "lucide-react";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
@@ -53,6 +54,67 @@ function readId(value: unknown): string | null {
   return null;
 }
 
+function isMissingDeletedAtColumnError(error: PostgrestError): boolean {
+  const message = error.message.toLowerCase();
+
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    (message.includes("deleted_at") && message.includes("column"))
+  );
+}
+
+async function selectPostBySlug({
+  supabase,
+  slug,
+  excludeDeleted,
+}: {
+  supabase: SupabaseClient;
+  slug: string;
+  excludeDeleted: boolean;
+}): Promise<{ data: unknown; error: PostgrestError | null }> {
+  let postQuery = supabase
+    .from("posts")
+    .select(
+      "id, slug, title, content_md, created_at, views_count, likes_count, comments_count",
+    )
+    .eq("slug", slug);
+
+  if (excludeDeleted) {
+    postQuery = postQuery.is("deleted_at", null);
+  }
+
+  const { data, error } = await postQuery.maybeSingle();
+  return { data, error };
+}
+
+async function loadPostBySlug({
+  supabase,
+  slug,
+}: {
+  supabase: SupabaseClient;
+  slug: string;
+}): Promise<{ data: unknown; error: PostgrestError | null }> {
+  const softDeleteAwareResult = await selectPostBySlug({
+    supabase,
+    slug,
+    excludeDeleted: true,
+  });
+
+  if (
+    softDeleteAwareResult.error &&
+    isMissingDeletedAtColumnError(softDeleteAwareResult.error)
+  ) {
+    return selectPostBySlug({
+      supabase,
+      slug,
+      excludeDeleted: false,
+    });
+  }
+
+  return softDeleteAwareResult;
+}
+
 async function getPostFromDatabase(
   slug: string,
 ): Promise<PersistedPost | null> {
@@ -60,13 +122,7 @@ async function getPostFromDatabase(
     const supabase = await createSupabaseServerClient();
     const [{ data, error }, { data: authData, error: authError }] =
       await Promise.all([
-        supabase
-          .from("posts")
-          .select(
-            "id, slug, title, content_md, created_at, views_count, likes_count, comments_count",
-          )
-          .eq("slug", slug)
-          .maybeSingle(),
+        loadPostBySlug({ supabase, slug }),
         supabase.auth.getUser(),
       ]);
 
