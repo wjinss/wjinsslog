@@ -7,11 +7,16 @@ import { ROUTES } from "@/constants/routes";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-type DeletePostErrorCode =
+export type DeletePostErrorCode =
   | "missing_identifier"
   | "post_not_found"
   | "soft_delete_column_missing"
   | "delete_failed";
+
+export type DeletePostActionResult = {
+  ok: false;
+  errorCode: DeletePostErrorCode;
+};
 
 interface DeletePostTarget {
   id: string | null;
@@ -81,11 +86,18 @@ function isMissingDeletedAtColumnError(error: unknown): boolean {
   );
 }
 
-function redirectDeleteError(errorCode: DeletePostErrorCode): never {
-  redirect(`${ROUTES.home}?deleteError=${errorCode}`);
+function createDeleteErrorResult(
+  errorCode: DeletePostErrorCode,
+): DeletePostActionResult {
+  return {
+    ok: false,
+    errorCode,
+  };
 }
 
-export async function deletePostAction(formData: FormData): Promise<void> {
+export async function deletePostAction(
+  formData: FormData,
+): Promise<DeletePostActionResult> {
   const adminSession = await getAdminSession();
 
   if (!adminSession.isAuthenticated) {
@@ -99,7 +111,7 @@ export async function deletePostAction(formData: FormData): Promise<void> {
   const target = getDeletePostTarget(formData);
 
   if (!target.id && !target.slug) {
-    redirectDeleteError("missing_identifier");
+    return createDeleteErrorResult("missing_identifier");
   }
 
   const supabase = await createSupabaseServerClient();
@@ -122,11 +134,11 @@ export async function deletePostAction(formData: FormData): Promise<void> {
       target,
       error: postError,
     });
-    redirectDeleteError("delete_failed");
+    return createDeleteErrorResult("delete_failed");
   }
 
   if (!post) {
-    redirectDeleteError("post_not_found");
+    return createDeleteErrorResult("post_not_found");
   }
 
   const now = new Date().toISOString();
@@ -154,7 +166,7 @@ export async function deletePostAction(formData: FormData): Promise<void> {
       errorCode,
       error: deleteError,
     });
-    redirectDeleteError(errorCode);
+    return createDeleteErrorResult(errorCode);
   }
 
   if (!deletedPostData) {
@@ -162,7 +174,7 @@ export async function deletePostAction(formData: FormData): Promise<void> {
       postId: post.id,
       slug: post.slug,
     });
-    redirectDeleteError("post_not_found");
+    return createDeleteErrorResult("post_not_found");
   }
 
   revalidatePath(ROUTES.home);
