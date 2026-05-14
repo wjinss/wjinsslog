@@ -8,11 +8,31 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [delay, value]);
+
+  return debouncedValue;
+}
+
 export function HeaderSearch() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 300);
+  const trimmedQuery = query.trim();
+  const trimmedDebouncedQuery = debouncedQuery.trim();
+  const canSearch = trimmedQuery.length > 0;
 
   useEffect(() => {
     if (!isOpen) {
@@ -30,12 +50,16 @@ export function HeaderSearch() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) {
+    if (!canSearch) {
       return;
     }
 
-    router.push(`${ROUTES.search}?q=${encodeURIComponent(trimmedQuery)}`);
+    const searchQuery =
+      trimmedDebouncedQuery === trimmedQuery ? trimmedDebouncedQuery : trimmedQuery;
+    const params = new URLSearchParams({ q: searchQuery });
+
+    router.push(`${ROUTES.search}?${params.toString()}`);
+    closeSearch();
   };
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -79,13 +103,24 @@ export function HeaderSearch() {
           onKeyDown={handleInputKeyDown}
           placeholder="검색어 입력"
           className={cn(
-            "h-8 w-full rounded-lg border border-input bg-background pr-8 pl-8 text-sm outline-none transition",
+            "h-8 w-full rounded-lg border border-input bg-background pr-2 pl-8 text-sm outline-none transition",
             "placeholder:text-muted-foreground",
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
             "[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden",
           )}
         />
       </div>
+
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        type="submit"
+        aria-label="검색"
+        title="검색"
+        disabled={!canSearch}
+      >
+        <SearchIcon />
+      </Button>
 
       <Button
         variant="ghost"
