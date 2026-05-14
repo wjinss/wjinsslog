@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { HeaderSearch } from "@/components/layout/header-search";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/constants/routes";
 import { getAuthViewer } from "@/features/auth/lib/get-auth-viewer";
-import { Sun } from "lucide-react";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
 
 export async function Header() {
@@ -22,9 +21,7 @@ export async function Header() {
 
         <div className="flex items-center gap-4">
           <HeaderSearch />
-          <Button variant="ghost" size="sm" type="button">
-            <Sun />
-          </Button>
+          <ThemeToggle />
           {adminSession.isAdmin && (
             <Link
               href={ROUTES.newPost}
