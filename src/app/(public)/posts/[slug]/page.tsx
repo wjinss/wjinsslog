@@ -281,7 +281,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         </header>
 
         <section className="rounded-xl border p-6">
-          <article className="prose max-w-none">
+          <article className="markdown-body prose max-w-none">
             <ReactMarkdown>{persistedPost.contentMd}</ReactMarkdown>
           </article>
         </section>
