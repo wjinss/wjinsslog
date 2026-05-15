@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -6,6 +7,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
+import { SITE_CONFIG } from "@/constants/site";
 import { PostCommentsSection } from "@/features/comments/components/post-comments-section";
 import { getPostComments } from "@/features/comments/lib/get-post-comments";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
@@ -33,6 +35,14 @@ interface PersistedPost {
 
 interface PostDetailPageProps {
   params: Promise<{ slug: string }>;
+}
+
+interface PostMetadataSource {
+  slug: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string | null;
+  createdAt: string | null;
 }
 
 function readString(value: unknown): string | null {
@@ -77,7 +87,7 @@ async function selectPostBySlug({
   let postQuery = supabase
     .from("posts")
     .select(
-      "id, slug, title, content_md, created_at, views_count, likes_count, comments_count",
+      "id, slug, title, excerpt, thumbnail_url, content_md, created_at, views_count, likes_count, comments_count",
     )
     .eq("slug", slug);
 
@@ -114,6 +124,114 @@ async function loadPostBySlug({
   }
 
   return softDeleteAwareResult;
+}
+
+function createPostDescription({
+  excerpt,
+  title,
+}: {
+  excerpt: string | null;
+  title: string;
+}): string {
+  const fallback = `${title} 글을 ${SITE_CONFIG.name}에서 읽어보세요.`;
+  const description = excerpt ?? fallback;
+
+  return description.length > 155
+    ? `${description.slice(0, 152).trimEnd()}...`
+    : description;
+}
+
+function mapPostMetadataSource(data: unknown): PostMetadataSource | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const row = data as Record<string, unknown>;
+  const slug = readString(row.slug);
+  const title = readString(row.title);
+
+  if (!slug || !title) {
+    return null;
+  }
+
+  return {
+    slug,
+    title,
+    description: createPostDescription({
+      excerpt: readString(row.excerpt),
+      title,
+    }),
+    thumbnailUrl: readString(row.thumbnail_url),
+    createdAt: readString(row.created_at),
+  };
+}
+
+async function getPostMetadataSource(
+  slug: string,
+): Promise<PostMetadataSource | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await loadPostBySlug({ supabase, slug });
+
+    if (error) {
+      return null;
+    }
+
+    return mapPostMetadataSource(data);
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: PostDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostMetadataSource(slug);
+
+  if (!post) {
+    return {
+      title: "포스트를 찾을 수 없습니다",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const postUrl = `/posts/${post.slug}`;
+  const imageUrl = post.thumbnailUrl ?? SITE_CONFIG.ogImage;
+
+  return {
+    title: post.title,
+    description: post.description,
+    alternates: {
+      canonical: postUrl,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      url: postUrl,
+      siteName: SITE_CONFIG.name,
+      locale: "ko_KR",
+      type: "article",
+      publishedTime: post.createdAt ?? undefined,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      images: [imageUrl],
+    },
+  };
 }
 
 async function getPostFromDatabase(
