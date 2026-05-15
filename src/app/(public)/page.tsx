@@ -1,7 +1,42 @@
+import type { Metadata } from "next";
+
 import { PageContainer } from "@/components/layout/page-container";
+import { SITE_CONFIG } from "@/constants/site";
 import { PostFeed } from "@/features/posts/components/post-feed";
 import { TagFilterBar } from "@/features/posts/components/tag-filter-bar";
 import { getPostFeedData } from "@/features/posts/lib/get-post-feed-data";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: SITE_CONFIG.title,
+  },
+  description: SITE_CONFIG.description,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: SITE_CONFIG.title,
+    description: SITE_CONFIG.description,
+    url: "/",
+    siteName: SITE_CONFIG.name,
+    locale: "ko_KR",
+    type: "website",
+    images: [
+      {
+        url: SITE_CONFIG.ogImage,
+        width: 1200,
+        height: 630,
+        alt: SITE_CONFIG.name,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_CONFIG.title,
+    description: SITE_CONFIG.description,
+    images: [SITE_CONFIG.ogImage],
+  },
+};
 
 interface HomePageProps {
   searchParams: Promise<{ tag?: string }>;
