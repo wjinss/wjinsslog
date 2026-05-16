@@ -144,7 +144,7 @@ export default async function EditPostPage({
               required
               rows={18}
               defaultValue={post.contentMd}
-              className="min-h-[420px] w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm outline-none transition focus:border-primary"
+              className="min-h-105 w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm outline-none transition focus:border-primary"
             />
           </div>
 
