@@ -153,7 +153,8 @@ async function loadPublishedPostIdsByTagName({
     .from("post_tags")
     .select("post_id, tags!inner(name), posts!inner(status)")
     .ilike("tags.name", searchPattern)
-    .eq("posts.status", "published");
+    .eq("posts.status", "published")
+    .is("posts.deleted_at", null);
 
   return {
     postIds: uniqueIds(asRecordArray(data).map((row) => readId(row.post_id))),

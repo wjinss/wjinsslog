@@ -72,7 +72,8 @@ export async function loadPostIdsByTagSlug({
     .from("post_tags")
     .select("post_id, tags!inner(slug), posts!inner(status)")
     .eq("tags.slug", tagSlug)
-    .eq("posts.status", "published");
+    .eq("posts.status", "published")
+    .is("posts.deleted_at", null);
 
   if (error) {
     console.error("[loadPostIdsByTagSlug] query failed", {
@@ -171,7 +172,8 @@ export async function loadPublishedTagNames({
   const { data, error } = await supabase
     .from("post_tags")
     .select("post_id, tags:tags(id, name, slug), posts!inner(status)")
-    .eq("posts.status", "published");
+    .eq("posts.status", "published")
+    .is("posts.deleted_at", null);
 
   if (error) {
     console.error("[loadPublishedTagNames] query failed", {
