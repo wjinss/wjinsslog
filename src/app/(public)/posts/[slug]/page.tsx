@@ -13,7 +13,7 @@ import { getPostComments } from "@/features/comments/lib/get-post-comments";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
 import { DeletePostButton } from "@/features/posts/components/delete-post-button";
 import { LikeButton } from "@/features/posts/components/like-button";
-import { incrementPostViews } from "@/features/posts/lib/increment-post-views";
+import { PostViewTracker } from "@/features/posts/components/post-view-tracker";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatTimeAgo } from "@/utils/date";
@@ -264,14 +264,10 @@ async function getPostFromDatabase(
         ? authData.user.id
         : null;
 
-    const [loadedTags, incrementedViewsCount, likedRow] = await Promise.all([
+    const [loadedTags, likedRow] = await Promise.all([
       loadPostTagNamesByPostIds({
         supabase,
         postIds: [id],
-      }),
-      incrementPostViews({
-        supabase,
-        slug: persistedSlug,
       }),
       viewerUserId
         ? supabase
@@ -303,7 +299,7 @@ async function getPostFromDatabase(
       title,
       contentMd,
       createdAt: readString(row.created_at),
-      viewsCount: incrementedViewsCount ?? readNumber(row.views_count),
+      viewsCount: readNumber(row.views_count),
       likesCount: readNumber(row.likes_count),
       initialIsLiked: Boolean(likedRow.data),
       commentsCount: readNumber(row.comments_count),
@@ -337,6 +333,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <PageContainer>
+      <PostViewTracker postId={persistedPost.id} />
       <article className="mx-auto max-w-3xl space-y-6">
         <header className="space-y-3 border-b pb-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
