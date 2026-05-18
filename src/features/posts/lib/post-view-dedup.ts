@@ -52,7 +52,7 @@ export function canIncreasePostView(postId: string): boolean {
 
     return Date.now() - viewedAt >= POST_VIEW_DEDUP_INTERVAL_MS;
   } catch {
-    return true;
+    return false;
   }
 }
 

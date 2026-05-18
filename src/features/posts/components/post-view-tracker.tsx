@@ -11,15 +11,22 @@ interface PostViewTrackerProps {
   postId: string;
 }
 
+const pendingPostViewRequests = new Set<string>();
+
 export function PostViewTracker({ postId }: PostViewTrackerProps) {
   const hasRequestedRef = useRef(false);
 
   useEffect(() => {
-    if (hasRequestedRef.current || !canIncreasePostView(postId)) {
+    if (
+      hasRequestedRef.current ||
+      pendingPostViewRequests.has(postId) ||
+      !canIncreasePostView(postId)
+    ) {
       return;
     }
 
     hasRequestedRef.current = true;
+    pendingPostViewRequests.add(postId);
 
     const incrementPostView = async () => {
       try {
@@ -35,6 +42,8 @@ export function PostViewTracker({ postId }: PostViewTrackerProps) {
           postId,
           error,
         });
+      } finally {
+        pendingPostViewRequests.delete(postId);
       }
     };
 
