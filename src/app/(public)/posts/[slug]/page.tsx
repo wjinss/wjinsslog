@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createElement, type ComponentProps } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -44,6 +45,20 @@ interface PostMetadataSource {
   description: string;
   thumbnailUrl: string | null;
   createdAt: string | null;
+}
+
+function MarkdownImage({
+  alt = "",
+  loading = "lazy",
+  decoding = "async",
+  ...props
+}: ComponentProps<"img">) {
+  return createElement("img", {
+    ...props,
+    alt,
+    loading,
+    decoding,
+  });
 }
 
 function readString(value: unknown): string | null {
@@ -400,7 +415,9 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
         <section className="rounded-xl border p-6">
           <article className="markdown-body prose max-w-none">
-            <ReactMarkdown>{persistedPost.contentMd}</ReactMarkdown>
+            <ReactMarkdown components={{ img: MarkdownImage }}>
+              {persistedPost.contentMd}
+            </ReactMarkdown>
           </article>
         </section>
 

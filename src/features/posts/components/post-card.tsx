@@ -7,9 +7,13 @@ import type { PostSummary } from "@/types/post";
 
 interface PostCardProps {
   post: PostSummary;
+  imagePriority?: boolean;
 }
 
-export function PostCard({ post }: PostCardProps) {
+const POST_CARD_THUMBNAIL_SIZES =
+  "(min-width: 768px) 624px, calc(100vw - 2rem)";
+
+export function PostCard({ post, imagePriority = false }: PostCardProps) {
   return (
     <article className="overflow-hidden rounded-xl border bg-card">
       {post.thumbnailUrl && (
@@ -19,6 +23,8 @@ export function PostCard({ post }: PostCardProps) {
               src={post.thumbnailUrl}
               alt={post.title}
               fill
+              priority={imagePriority}
+              sizes={POST_CARD_THUMBNAIL_SIZES}
               className="object-cover"
             />
           </div>
