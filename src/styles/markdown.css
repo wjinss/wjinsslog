@@ -31,6 +31,14 @@
   margin-top: 0.8em;
 }
 
+.markdown-body img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  border-radius: 0.75rem;
+  background: var(--muted);
+}
+
 .markdown-body code {
   border-radius: 0.4rem;
   padding: 0.1rem 0.35rem;
