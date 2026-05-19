@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createElement, type ComponentProps } from "react";
+import { cache, createElement, type ComponentProps } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -39,12 +39,18 @@ interface PostDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
-interface PostMetadataSource {
+interface PostDetailSource {
+  id: string;
   slug: string;
   title: string;
+  excerpt: string | null;
   description: string;
   thumbnailUrl: string | null;
+  contentMd: string;
   createdAt: string | null;
+  viewsCount: number;
+  likesCount: number;
+  commentsCount: number;
 }
 
 function MarkdownImage({
@@ -157,34 +163,42 @@ function createPostDescription({
     : description;
 }
 
-function mapPostMetadataSource(data: unknown): PostMetadataSource | null {
+function mapPostDetailSource(data: unknown): PostDetailSource | null {
   if (!data || typeof data !== "object") {
     return null;
   }
 
   const row = data as Record<string, unknown>;
+  const id = readId(row.id);
   const slug = readString(row.slug);
   const title = readString(row.title);
+  const contentMd = readString(row.content_md);
 
-  if (!slug || !title) {
+  if (!id || !slug || !title || !contentMd) {
     return null;
   }
 
+  const excerpt = readString(row.excerpt);
+
   return {
+    id,
     slug,
     title,
+    excerpt,
     description: createPostDescription({
-      excerpt: readString(row.excerpt),
+      excerpt,
       title,
     }),
     thumbnailUrl: readString(row.thumbnail_url),
+    contentMd,
     createdAt: readString(row.created_at),
+    viewsCount: readNumber(row.views_count),
+    likesCount: readNumber(row.likes_count),
+    commentsCount: readNumber(row.comments_count),
   };
 }
 
-async function getPostMetadataSource(
-  slug: string,
-): Promise<PostMetadataSource | null> {
+const getPostDetailSource = cache(async (slug: string) => {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await loadPostBySlug({ supabase, slug });
@@ -193,17 +207,17 @@ async function getPostMetadataSource(
       return null;
     }
 
-    return mapPostMetadataSource(data);
+    return mapPostDetailSource(data);
   } catch {
     return null;
   }
-}
+});
 
 export async function generateMetadata({
   params,
 }: PostDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPostMetadataSource(slug);
+  const post = await getPostDetailSource(slug);
 
   if (!post) {
     return {
@@ -255,23 +269,12 @@ async function getPostFromDatabase(
 ): Promise<PersistedPost | null> {
   try {
     const supabase = await createSupabaseServerClient();
-    const [{ data, error }, { data: authData, error: authError }] =
-      await Promise.all([
-        loadPostBySlug({ supabase, slug }),
-        supabase.auth.getUser(),
-      ]);
+    const [post, { data: authData, error: authError }] = await Promise.all([
+      getPostDetailSource(slug),
+      supabase.auth.getUser(),
+    ]);
 
-    if (error || !data || typeof data !== "object") {
-      return null;
-    }
-
-    const row = data as Record<string, unknown>;
-    const id = readId(row.id);
-    const persistedSlug = readString(row.slug);
-    const title = readString(row.title);
-    const contentMd = readString(row.content_md);
-
-    if (!id || !persistedSlug || !title || !contentMd) {
+    if (!post) {
       return null;
     }
 
@@ -283,20 +286,20 @@ async function getPostFromDatabase(
     const [loadedTags, likedRow] = await Promise.all([
       loadPostTagNamesByPostIds({
         supabase,
-        postIds: [id],
+        postIds: [post.id],
       }),
       viewerUserId
         ? supabase
             .from("post_likes")
             .select("post_id")
-            .eq("post_id", id)
+            .eq("post_id", post.id)
             .eq("user_id", viewerUserId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
     ]);
 
     const tags = loadedTags.ok
-      ? (loadedTags.tagNamesByPostId.get(id) ?? [])
+      ? (loadedTags.tagNamesByPostId.get(post.id) ?? [])
       : [];
     const tagsLoadError = loadedTags.ok ? null : loadedTags.message;
 
@@ -304,21 +307,21 @@ async function getPostFromDatabase(
       console.error("[getPostFromDatabase] post like state query failed", {
         message: likedRow.error.message,
         code: likedRow.error.code,
-        postId: id,
+        postId: post.id,
         userId: viewerUserId,
       });
     }
 
     return {
-      id,
-      slug: persistedSlug,
-      title,
-      contentMd,
-      createdAt: readString(row.created_at),
-      viewsCount: readNumber(row.views_count),
-      likesCount: readNumber(row.likes_count),
+      id: post.id,
+      slug: post.slug,
+      title: post.title,
+      contentMd: post.contentMd,
+      createdAt: post.createdAt,
+      viewsCount: post.viewsCount,
+      likesCount: post.likesCount,
       initialIsLiked: Boolean(likedRow.data),
-      commentsCount: readNumber(row.comments_count),
+      commentsCount: post.commentsCount,
       viewerUserId,
       tags,
       tagsLoadError,
