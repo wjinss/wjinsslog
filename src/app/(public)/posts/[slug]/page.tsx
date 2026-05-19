@@ -7,6 +7,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
+import { AppQueryProvider } from "@/components/providers/app-query-provider";
 import { SITE_CONFIG } from "@/constants/site";
 import { PostCommentsSection } from "@/features/comments/components/post-comments-section";
 import { getPostComments } from "@/features/comments/lib/get-post-comments";
@@ -369,12 +370,14 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 : "-"}
             </span>
             <span>조회수 {persistedPost.viewsCount}</span>
-            <LikeButton
-              postId={persistedPost.id}
-              initialLikesCount={persistedPost.likesCount}
-              initialIsLiked={persistedPost.initialIsLiked}
-              viewerUserId={persistedPost.viewerUserId}
-            />
+            <AppQueryProvider>
+              <LikeButton
+                postId={persistedPost.id}
+                initialLikesCount={persistedPost.likesCount}
+                initialIsLiked={persistedPost.initialIsLiked}
+                viewerUserId={persistedPost.viewerUserId}
+              />
+            </AppQueryProvider>
             <span>댓글 {visibleCommentsCount}</span>
           </div>
           {persistedPost.tagsLoadError ? (
