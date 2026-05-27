@@ -17,29 +17,61 @@ export type AuthActionState = AuthState;
 export type SignUpWithEmailActionParams = SignUpParams;
 
 function resolveRequestOrigin(headerStore: Headers): string {
-  const origin = headerStore.get("origin");
+  const origin = getUrlOrigin(headerStore.get("origin"));
   if (origin) return origin;
+
+  const refererOrigin = getUrlOrigin(headerStore.get("referer"));
+  if (refererOrigin) return refererOrigin;
 
   const host = (headerStore.get("x-forwarded-host") ?? headerStore.get("host"))
     ?.split(",")[0]
     ?.trim();
 
   if (!host) {
-    return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const fallbackOrigin = getUrlOrigin(
+      process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VERCEL_URL,
+    );
+
+    if (fallbackOrigin) return fallbackOrigin;
+
+    throw new Error("Unable to resolve request origin for OAuth redirect.");
   }
 
   const forwardedProtocol = headerStore
     .get("x-forwarded-proto")
     ?.split(",")[0]
     ?.trim();
+  const fallbackProtocol = getUrlProtocol(
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VERCEL_URL,
+  );
 
-  const protocol =
-    forwardedProtocol ??
-    (host.includes("localhost") || host.startsWith("127.0.0.1")
-      ? "http"
-      : "https");
+  const protocol = forwardedProtocol ?? fallbackProtocol ?? "https";
 
   return `${protocol}://${host}`;
+}
+
+function getUrlOrigin(url: string | null | undefined): string | null {
+  if (!url) return null;
+
+  const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+
+  try {
+    return new URL(normalizedUrl).origin;
+  } catch {
+    return null;
+  }
+}
+
+function getUrlProtocol(url: string | null | undefined): string | null {
+  if (!url) return null;
+
+  const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+
+  try {
+    return new URL(normalizedUrl).protocol.replace(":", "");
+  } catch {
+    return null;
+  }
 }
 
 export async function signInWithEmailAction(
@@ -54,8 +86,6 @@ async function signInWithProviderAction(
   const headerStore = await headers();
   const origin = resolveRequestOrigin(headerStore);
   const callbackUrl = new URL(ROUTES.authCallback, origin);
-
-  callbackUrl.searchParams.set("next", ROUTES.home);
 
   const { url } = await signInWithOAuth({
     provider,
