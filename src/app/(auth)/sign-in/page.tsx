@@ -18,8 +18,8 @@ export default function SignInPage() {
           <span className="text-sm text-muted-foreground">또는</span>
           <div className="flex-1 border-t" />
         </div>
-        <GitHubSignIn />
         <GoogleSignIn />
+        <GitHubSignIn />
         <p className="text-center text-sm text-muted-foreground">
           아이디가 없으신가요?{" "}
           <Link
