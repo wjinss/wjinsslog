@@ -8,7 +8,8 @@ import type { PostSummary } from "@/types/post";
 import {
   loadPostIdsByTagSlug,
   loadPostTagNamesByPostIds,
-  loadPublishedTagNames,
+  loadPublishedTagSummaries,
+  type PublishedTagSummary,
 } from "@/features/posts/lib/post-tag-relations";
 import { sanitizePostSlug } from "@/features/posts/lib/slug";
 
@@ -17,7 +18,7 @@ const POST_LIST_BASE_SELECT =
 
 interface PostFeedData {
   posts: PostSummary[];
-  tags: string[];
+  tags: PublishedTagSummary[];
 }
 
 export type PostFeedResult =
@@ -227,7 +228,7 @@ export async function getPostFeedData({
 
     if (filteredPostIds) {
       if (filteredPostIds.length === 0) {
-        const publishedTags = await loadPublishedTagNames({ supabase });
+        const publishedTags = await loadPublishedTagSummaries({ supabase });
         if (!publishedTags.ok) {
           return {
             ok: false,
@@ -239,7 +240,7 @@ export async function getPostFeedData({
           ok: true,
           data: {
             posts: [],
-            tags: publishedTags.uniqueTagNames,
+            tags: publishedTags.tags,
           },
         };
       }
@@ -279,7 +280,7 @@ export async function getPostFeedData({
       };
     }
 
-    const publishedTags = await loadPublishedTagNames({ supabase });
+    const publishedTags = await loadPublishedTagSummaries({ supabase });
     if (!publishedTags.ok) {
       return {
         ok: false,
@@ -295,7 +296,7 @@ export async function getPostFeedData({
       ok: true,
       data: {
         posts,
-        tags: publishedTags.uniqueTagNames,
+        tags: publishedTags.tags,
       },
     };
   } catch (error) {

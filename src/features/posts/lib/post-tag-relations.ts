@@ -8,6 +8,18 @@ interface PostTagNamesSuccess {
   uniqueTagNames: string[];
 }
 
+export interface PublishedTagSummary {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
+
+interface PublishedTagSummariesSuccess {
+  ok: true;
+  tags: PublishedTagSummary[];
+}
+
 interface QueryFailure {
   ok: false;
   message: string;
@@ -20,6 +32,9 @@ interface PostIdsByTagSuccess {
 
 export type PostTagNamesResult = PostTagNamesSuccess | QueryFailure;
 export type PostIdsByTagResult = PostIdsByTagSuccess | QueryFailure;
+export type PublishedTagSummariesResult =
+  | PublishedTagSummariesSuccess
+  | QueryFailure;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
@@ -59,6 +74,22 @@ function readTagName(value: unknown): string | null {
   }
 
   return readString(value.name);
+}
+
+function readTagSummary(value: unknown): Omit<PublishedTagSummary, "count"> | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = readDatabaseId(value.id);
+  const name = readString(value.name);
+  const slug = readString(value.slug);
+
+  if (!id || !name || !slug) {
+    return null;
+  }
+
+  return { id, name, slug };
 }
 
 export async function loadPostIdsByTagSlug({
@@ -164,11 +195,11 @@ export async function loadPostTagNamesByPostIds({
   };
 }
 
-export async function loadPublishedTagNames({
+export async function loadPublishedTagSummaries({
   supabase,
 }: {
   supabase: SupabaseClient;
-}): Promise<PostTagNamesResult> {
+}): Promise<PublishedTagSummariesResult> {
   const { data, error } = await supabase
     .from("post_tags")
     .select("post_id, tags:tags(id, name, slug), posts!inner(status)")
@@ -176,7 +207,7 @@ export async function loadPublishedTagNames({
     .is("posts.deleted_at", null);
 
   if (error) {
-    console.error("[loadPublishedTagNames] query failed", {
+    console.error("[loadPublishedTagSummaries] query failed", {
       message: error.message,
       code: error.code,
     });
@@ -187,32 +218,39 @@ export async function loadPublishedTagNames({
     };
   }
 
-  const mutableMap = new Map<string, Set<string>>();
-  const allTagNames: string[] = [];
+  const tagSummariesById = new Map<
+    string,
+    Omit<PublishedTagSummary, "count"> & { postIds: Set<string> }
+  >();
 
   for (const row of asRecordArray(data)) {
     const postId = readDatabaseId(row.post_id);
-    const tagName = readTagName(row.tags);
+    const tag = readTagSummary(row.tags);
 
-    if (!postId || !tagName) {
+    if (!postId || !tag) {
       continue;
     }
 
-    allTagNames.push(tagName);
-    const currentSet = mutableMap.get(postId) ?? new Set<string>();
-    currentSet.add(tagName);
-    mutableMap.set(postId, currentSet);
+    const current = tagSummariesById.get(tag.id) ?? {
+      ...tag,
+      postIds: new Set<string>(),
+    };
+    current.postIds.add(postId);
+    tagSummariesById.set(tag.id, current);
   }
 
-  const tagNamesByPostId = new Map<string, string[]>();
-
-  for (const [postId, tagSet] of mutableMap.entries()) {
-    tagNamesByPostId.set(postId, uniqueSorted([...tagSet]));
-  }
+  const tags = [...tagSummariesById.values()]
+    .map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      slug: tag.slug,
+      count: tag.postIds.size,
+    }))
+    .filter((tag) => tag.count > 0)
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 
   return {
     ok: true,
-    tagNamesByPostId,
-    uniqueTagNames: uniqueSorted(allTagNames),
+    tags,
   };
 }

@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 type TagFilterItem =
   | string
   | {
+      id?: string | number;
       name: string;
+      slug?: string;
       count?: number;
     };
 
