@@ -1,12 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 
 import { PageContainer } from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { getAdminSession } from "@/features/auth/lib/admin-access";
+import { EditPostForm } from "@/features/posts/components/edit-post-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-import { updatePostAction } from "./actions";
 
 interface EditPostPageProps {
   params: Promise<{ slug: string }>;
@@ -102,56 +100,7 @@ export default async function EditPostPage({
           </p>
         ) : null}
 
-        <form action={updatePostAction} className="space-y-5" noValidate>
-          <input type="hidden" name="slug" value={post.slug} />
-
-          <div className="space-y-1.5">
-            <label htmlFor="title" className="text-sm font-medium">
-              제목
-            </label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              required
-              maxLength={150}
-              defaultValue={post.title}
-              className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="thumbnailUrl" className="text-sm font-medium">
-              썸네일 URL
-            </label>
-            <input
-              id="thumbnailUrl"
-              name="thumbnailUrl"
-              type="url"
-              defaultValue={post.thumbnailUrl}
-              placeholder="https://example.com/thumbnail.png"
-              className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="contentMd" className="text-sm font-medium">
-              본문
-            </label>
-            <textarea
-              id="contentMd"
-              name="contentMd"
-              required
-              rows={18}
-              defaultValue={post.contentMd}
-              className="min-h-105 w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm outline-none transition focus:border-primary"
-            />
-          </div>
-
-          <Button type="submit" className="h-10 w-full">
-            수정 완료
-          </Button>
-        </form>
+        <EditPostForm post={post} />
       </section>
     </PageContainer>
   );
