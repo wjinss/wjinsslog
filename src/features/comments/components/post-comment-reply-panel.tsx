@@ -38,7 +38,7 @@ export function PostCommentReplyPanel({
       >
         {buttonLabel}
       </button>
-      <div className=" bg-gray-100 rounded-xl">
+      <div className="rounded-xl bg-muted/40 dark:bg-muted/60">
         {isOpen ? (
           <div className="mt-3 space-y-3 py-4 px-6">
             {repliesCount > 0 ? (
