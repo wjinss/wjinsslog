@@ -24,7 +24,7 @@ export function TagFilterBar({
 }: TagFilterBarProps) {
   const containerClassName =
     variant === "sidebar"
-      ? "flex gap-4 overflow-x-auto pb-2 xl:max-h-[calc(100vh-7rem)] xl:flex-col xl:items-start xl:overflow-x-visible xl:overflow-y-auto xl:rounded-lg xl:border xl:bg-card xl:p-5"
+      ? "flex gap-4 overflow-x-auto xl:max-h-[calc(100vh-7rem)] xl:flex-col xl:items-start xl:overflow-x-visible xl:overflow-y-auto xl:bg-card xl:px-5"
       : "space-y-2";
   const listClassName =
     variant === "sidebar"
@@ -36,8 +36,8 @@ export function TagFilterBar({
       : "hidden";
   const linkClassName =
     variant === "sidebar"
-      ? "inline-flex w-fit max-w-full shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs transition-colors hover:bg-secondary/80"
-      : "inline-flex max-w-[75vw] shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs transition-colors hover:bg-secondary/80 sm:max-w-xs";
+      ? "inline-flex w-fit max-w-full min-w-0 shrink-0 items-center gap-3 rounded-full px-3 py-1 text-xs transition-colors hover:bg-[oklch(0.922_0_0)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:hover:bg-[oklch(0.205_0_0)]"
+      : "inline-flex max-w-[75vw] min-w-0 shrink-0 items-center gap-3 rounded-full px-3 py-1 text-xs transition-colors hover:bg-[oklch(0.922_0_0)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:hover:bg-[oklch(0.205_0_0)] sm:max-w-xs";
 
   return (
     <nav aria-label="태그 필터" className={containerClassName}>
@@ -48,7 +48,7 @@ export function TagFilterBar({
           className={cn(
             linkClassName,
             !activeTag
-              ? "bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
+              ? "bg-primary font-semibold text-primary-foreground hover:bg-[oklch(0.145_0_0)] dark:hover:bg-[oklch(0.8_0_0)]"
               : "bg-secondary",
           )}
         >
@@ -66,13 +66,24 @@ export function TagFilterBar({
               className={cn(
                 linkClassName,
                 isActive
-                  ? "bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
+                  ? "bg-primary font-semibold text-primary-foreground hover:bg-[oklch(0.145_0_0)] dark:hover:bg-[oklch(0.8_0_0)]"
                   : "bg-secondary",
               )}
             >
-              <span className="min-w-0 truncate">{tag}</span>
+              <span className="min-w-0 max-w-30 truncate" title={tag}>
+                {tag}
+              </span>
               {typeof count === "number" ? (
-                <span className="shrink-0 text-xs opacity-80">{count}개</span>
+                <span
+                  className={cn(
+                    "shrink-0 text-xs",
+                    isActive
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {count}개
+                </span>
               ) : null}
             </Link>
           );
