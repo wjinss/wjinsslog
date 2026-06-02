@@ -6,15 +6,18 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PostSummary } from "@/types/post";
 
 import {
+  asRecordArray,
+  mapRowToPostSummary,
+  POST_SUMMARY_SELECT,
+  readId,
+} from "@/features/posts/lib/post-summary-mapper";
+import {
   loadPostIdsByTagSlug,
   loadPostTagNamesByPostIds,
   loadPublishedTagSummaries,
   type PublishedTagSummary,
 } from "@/features/posts/lib/post-tag-relations";
 import { sanitizePostSlug } from "@/features/posts/lib/slug";
-
-const POST_LIST_BASE_SELECT =
-  "id, slug, title, excerpt, thumbnail_url, likes_count, views_count, comments_count, created_at";
 
 interface PostFeedData {
   posts: PostSummary[];
@@ -24,38 +27,6 @@ interface PostFeedData {
 export type PostFeedResult =
   | { ok: true; data: PostFeedData }
   | { ok: false; message: string };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object";
-}
-
-function asRecordArray(value: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter(isRecord);
-}
-
-function readString(value: unknown): string | null {
-  return typeof value === "string" && value.trim().length > 0 ? value : null;
-}
-
-function readId(value: unknown): string | null {
-  if (typeof value === "string" && value.trim().length > 0) {
-    return value;
-  }
-
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-
-  return null;
-}
-
-function readNumber(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
 
 function isMissingDeletedAtColumnError(error: PostgrestError): boolean {
   const message = error.message.toLowerCase();
@@ -95,32 +66,6 @@ function createTagSlugFromName(tagName: string): string {
   return codepointFallback ? `tag-${codepointFallback}` : "tag";
 }
 
-function mapRowToPostSummary(
-  row: Record<string, unknown>,
-  tagNamesByPostId: Map<string, string[]>,
-): PostSummary | null {
-  const id = readId(row.id);
-  const slug = readString(row.slug);
-  const title = readString(row.title);
-
-  if (!id || !slug || !title) {
-    return null;
-  }
-
-  return {
-    id,
-    slug,
-    title,
-    excerpt: readString(row.excerpt) ?? "",
-    thumbnailUrl: readString(row.thumbnail_url),
-    likesCount: readNumber(row.likes_count),
-    viewsCount: readNumber(row.views_count),
-    commentsCount: readNumber(row.comments_count),
-    createdAt: readString(row.created_at) ?? "",
-    tags: tagNamesByPostId.get(id) ?? [],
-  };
-}
-
 async function selectPublishedPostRows({
   supabase,
   filteredPostIds,
@@ -132,7 +77,7 @@ async function selectPublishedPostRows({
 }): Promise<{ data: unknown; error: PostgrestError | null }> {
   let postsQuery = supabase
     .from("posts")
-    .select(POST_LIST_BASE_SELECT)
+    .select(POST_SUMMARY_SELECT)
     .eq("status", "published")
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
