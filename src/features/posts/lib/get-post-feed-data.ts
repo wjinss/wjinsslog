@@ -15,6 +15,7 @@ import {
   loadPostIdsByTagSlug,
   loadPostTagNamesByPostIds,
   loadPublishedTagSummaries,
+  type PublishedTagSummariesResult,
   type PublishedTagSummary,
 } from "@/features/posts/lib/post-tag-relations";
 import { sanitizePostSlug } from "@/features/posts/lib/slug";
@@ -130,6 +131,15 @@ export async function getPostFeedData({
 
   try {
     const supabase = await createSupabaseServerClient();
+    const publishedTagsPromise: Promise<PublishedTagSummariesResult> =
+      loadPublishedTagSummaries({ supabase }).catch((error) => {
+        console.error("[getPostFeedData] published tags query failed", error);
+
+        return {
+          ok: false,
+          message: "전체 태그 목록을 불러오지 못했습니다.",
+        };
+      });
 
     let filteredPostIds: string[] | null = null;
 
@@ -173,7 +183,7 @@ export async function getPostFeedData({
 
     if (filteredPostIds) {
       if (filteredPostIds.length === 0) {
-        const publishedTags = await loadPublishedTagSummaries({ supabase });
+        const publishedTags = await publishedTagsPromise;
         if (!publishedTags.ok) {
           return {
             ok: false,
@@ -225,7 +235,7 @@ export async function getPostFeedData({
       };
     }
 
-    const publishedTags = await loadPublishedTagSummaries({ supabase });
+    const publishedTags = await publishedTagsPromise;
     if (!publishedTags.ok) {
       return {
         ok: false,
