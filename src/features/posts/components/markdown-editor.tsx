@@ -169,7 +169,13 @@ export function MarkdownEditor({
       isUnmounted = true;
       teardownEditor(editorRef.current);
     };
-  }, [handleInsertMarkdownImage, height, placeholder, teardownEditor]);
+  }, [
+    handleInsertMarkdownImage,
+    height,
+    placeholder,
+    syncMarkdownFromEditor,
+    teardownEditor,
+  ]);
 
   return (
     <div className="space-y-1.5">
