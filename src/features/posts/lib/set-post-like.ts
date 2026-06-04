@@ -14,26 +14,12 @@ interface SetPostLikeData {
   isLiked: boolean;
 }
 
-interface SetPostLikeDebugInfo {
-  postId: string;
-  userId: string;
-  shouldLike: boolean;
-  rpcData: unknown;
-  rpcError: {
-    message: string;
-    code: string | null;
-    details: string | null;
-    hint: string | null;
-  } | null;
-}
-
 export type SetPostLikeResult =
-  | { ok: true; data: SetPostLikeData; debug: SetPostLikeDebugInfo }
+  | { ok: true; data: SetPostLikeData }
   | {
       ok: false;
       status: number;
       message: string;
-      debug: SetPostLikeDebugInfo;
     };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -60,21 +46,6 @@ export async function setPostLike({
     p_user_id: userId,
   });
 
-  const debug: SetPostLikeDebugInfo = {
-    postId,
-    userId,
-    shouldLike,
-    rpcData: data,
-    rpcError: error
-      ? {
-          message: error.message,
-          code: error.code ?? null,
-          details: error.details ?? null,
-          hint: error.hint ?? null,
-        }
-      : null,
-  };
-
   if (error) {
     console.error(`[togglePostLike] ${shouldLike ? "insert" : "delete"} failed`, {
       message: error.message,
@@ -88,7 +59,6 @@ export async function setPostLike({
       ok: false,
       status: 500,
       message: "좋아요를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      debug,
     };
   }
 
@@ -106,7 +76,6 @@ export async function setPostLike({
       ok: false,
       status: 500,
       message: "좋아요 상태를 확인하지 못했습니다.",
-      debug,
     };
   }
 
@@ -116,6 +85,5 @@ export async function setPostLike({
       likesCount: readNumber(row.likes_count),
       isLiked: readBoolean(row.is_liked) ?? shouldLike,
     },
-    debug,
   };
 }

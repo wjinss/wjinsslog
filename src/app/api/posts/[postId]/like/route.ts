@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { setPostLike } from "@/features/posts/lib/set-post-like";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,59 +14,6 @@ function readShouldLike(payload: unknown): boolean | null {
 
   const value = (payload as Record<string, unknown>).shouldLike;
   return typeof value === "boolean" ? value : null;
-}
-
-async function readLikeDiagnostics({
-  supabase,
-  postId,
-  userId,
-}: {
-  supabase: SupabaseClient;
-  postId: string;
-  userId: string;
-}) {
-  const [{ data: postData, error: postError }, { data: likeData, error: likeError }] =
-    await Promise.all([
-      supabase
-        .from("posts")
-        .select("likes_count")
-        .eq("id", postId)
-        .maybeSingle(),
-      supabase
-        .from("post_likes")
-        .select("post_id")
-        .eq("post_id", postId)
-        .eq("user_id", userId)
-        .maybeSingle(),
-    ]);
-
-  return {
-    post: {
-      likesCount:
-        postData &&
-        typeof postData.likes_count === "number" &&
-        Number.isFinite(postData.likes_count)
-          ? postData.likes_count
-          : null,
-      error: postError
-        ? {
-            message: postError.message,
-            code: postError.code ?? null,
-            details: postError.details ?? null,
-          }
-        : null,
-    },
-    postLike: {
-      exists: Boolean(likeData),
-      error: likeError
-        ? {
-            message: likeError.message,
-            code: likeError.code ?? null,
-            details: likeError.details ?? null,
-          }
-        : null,
-    },
-  };
 }
 
 export async function POST(
@@ -113,45 +59,11 @@ export async function POST(
       );
     }
 
-    console.info("[togglePostLike] request", {
-      postId,
-      shouldLike,
-      userId: user.id,
-    });
-
-    const before = await readLikeDiagnostics({
-      supabase,
-      postId,
-      userId: user.id,
-    });
-
-    console.info("[togglePostLike] before rpc", {
-      postId,
-      shouldLike,
-      userId: user.id,
-      ...before,
-    });
-
     const result = await setPostLike({
       supabase,
       postId,
       shouldLike,
       userId: user.id,
-    });
-
-    console.info("[togglePostLike] rpc result", result.debug);
-
-    const after = await readLikeDiagnostics({
-      supabase,
-      postId,
-      userId: user.id,
-    });
-
-    console.info("[togglePostLike] after rpc", {
-      postId,
-      shouldLike,
-      userId: user.id,
-      ...after,
     });
 
     if (!result.ok) {
