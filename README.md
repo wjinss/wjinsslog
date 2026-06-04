@@ -1,36 +1,338 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# wjinss.log
 
-## Getting Started
+개발에 관련된 학습 내용을 정리하기 위해 만든 개발/기술 블로그입니다.
 
-First, run the development server:
+Velog 스타일의 UI와 기능 흐름을 참고하되,  
+블로그 플랫폼이 아니라 **내가 작성한 포스트만 보여주는 개인 블로그**로 설계했습니다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+포스트 작성, 수정, 삭제는 관리자만 가능하며,  
+방문자는 포스트를 읽고 좋아요와 댓글을 통해 상호작용할 수 있습니다.
+
+기능 구현은 요구사항을 작은 단위로 나누고,  
+각 단계마다 구현 범위와 검수 기준을 정해 점진적으로 진행했습니다.
+
+[배포 링크](https://wjinsslog.vercel.app/)
+
+---
+
+## 기술 스택
+
+### Frontend
+
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- TanStack Query
+- Zustand
+
+### Backend / Database
+
+- Supabase
+  - Auth
+  - PostgreSQL
+  - RLS
+
+### Deployment
+
+- Vercel
+
+### Package Manager
+
+- pnpm
+
+---
+
+## 주요 기능
+
+### 인증
+
+- 이메일/비밀번호 로그인, 로그아웃
+- 로그인(Google, GitHub)
+- 관리자 권한 분기
+
+관리자 기능:
+
+- 포스트 작성, 수정, 삭제
+
+### 포스트
+
+- Markdown 에디터 기반 포스트 작성/수정
+- 포스트 목록 조회
+- soft delete 기반 삭제 처리
+- 조회수, 좋아요, 생성시간 기능
+- 썸네일 이미지 표시
+
+---
+
+### 태그
+
+- 포스트별 태그 등록
+- 태그 기반 필터링
+- 태그별 포스트 개수 표시
+
+---
+
+### 댓글
+
+- 댓글, 대댓글 작성
+- 댓글 depth 제한(2depth)
+
+---
+
+### 검색
+
+- 제목, 태그 기반 검색
+- 디바운스 기반 입력 처리
+
+---
+
+## 설계 회고
+
+### 1. 관리자 권한 분리
+
+이 블로그는 누구나 읽을 수 있지만, 포스트 작성과 수정/삭제는 관리자만 가능해야 합니다.
+
+단순히 UI에서 버튼을 숨기는 방식만 사용하면, 일반 사용자가 직접 URL에 접근하거나 요청을 보낼 가능성을 막을 수 없습니다.
+
+그래서 관리자 기능은 다음 두 단계에서 함께 제어하도록 설계했습니다.
+
+```txt
+UI에서 관리자 전용 버튼 숨김
+→ 서버 액션과 라우트 접근에서 관리자 여부 재검증
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+권한 기준은 profiles.role = "admin"으로 두었습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+profiles.role = "admin"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+이 구조를 통해 비로그인 사용자나 일반 로그인 사용자는 포스트 작성, 수정, 삭제 기능에 접근할 수 없도록 했습니다.
 
-## Learn More
+관리자 기능 영역:
 
-To learn more about Next.js, take a look at the following resources:
+- 포스트 작성 페이지
+- 포스트 수정 액션 및 페이지
+- 포스트 삭제 액션
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 2. Supabase Auth와 OAuth Redirect 처리
 
-## Deploy on Vercel
+Google/GitHub OAuth 로그인을 구현하면서 로컬 개발환경과 Vercel 배포환경의 redirect URL이 달라지는 문제가 있었습니다.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+배포환경에서 소셜 로그인을 시도했을 때 localhost로 리디렉션되는 문제가 있었고, 원인은 OAuth redirect URL이 환경에 따라 동적으로 처리되지 않았기 때문이었습니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+이를 해결하기 위해 OAuth 요청 시 현재 origin을 기준으로 callback URL을 생성하도록 정리했습니다.
+
+개발환경:
+
+```bash
+http://localhost:3000/auth/callback
+```
+
+배포환경:
+
+```bash
+https://wjinsslog.vercel.app/auth/callback
+```
+
+이 방식으로 개발환경과 배포환경에서 같은 코드로 OAuth 로그인을 처리할 수 있게 했습니다.
+
+---
+
+### 3. Soft Delete와 공개 데이터 필터링
+
+포스트 삭제는 실제 row를 제거하는 hard delete가 아니라  
+`deleted_at` 값을 기록하는 soft delete 방식으로 처리했습니다.
+
+hard delete는 구현이 단순하지만, 포스트와 연결된 태그, 댓글, 좋아요 데이터를 함께 다루기 어려워질 수 있습니다.
+반면 soft delete는 데이터를 보존하면서도 공개 화면에서는 숨길 수 있다는 장점이 있습니다.
+
+다만 soft delete를 사용하면 삭제된 포스트가 DB에는 남아 있기 때문에, 공개 조회 로직에서 삭제 여부를 일관되게 필터링해야 합니다.
+
+그래서 공개 페이지에서는 다음 조건을 기준으로 데이터를 조회하도록 정리했습니다.
+
+```txt
+posts.status = "published"
+posts.deleted_at is null
+```
+
+이 조건은 다음 영역에서 중요하게 사용됩니다.
+
+- 포스트 목록
+- 포스트 상세
+- 태그 필터
+- 검색 결과
+- 태그 count
+
+특히 포스트를 삭제했는데 해당 포스트에만 연결된 태그가 사이드바에 계속 노출되는 문제가 발생할 수 있어, 태그 조회와 count 계산에서도 삭제된 포스트를 제외하는 기준을 적용했습니다.
+
+---
+
+### 4. 댓글과 대댓글 구조
+
+댓글은 무한 중첩 구조가 아니라 `댓글 → 대댓글`까지만 허용하는 depth 제한 구조로 설계했습니다.
+
+```txt
+댓글
+└ 대댓글
+```
+
+무한 depth 댓글은 대화 구조를 자유롭게 만들 수 있지만, UI 렌더링과 데이터 조회 로직이 복잡해집니다.
+개인 블로그에서는 깊은 토론 구조보다 간단한 피드백과 답글 흐름이 더 적합하다고 판단했습니다.
+
+그래서 댓글 depth를 2단계로 제한해 다음 장점을 얻고자 했습니다.
+
+- UI 구조 단순화
+- 댓글 조회 로직 단순화
+- 대댓글의 대댓글로 인한 복잡도 방지
+- 모바일 화면에서 댓글 영역이 과하게 복잡해지는 문제 방지
+
+---
+
+## 5. 검색 범위 결정
+
+검색 기능은 제목과 태그를 기준으로 구현했습니다.
+
+처음에는 본문까지 검색 대상에 포함할지 고민했지만, Markdown 본문에는 코드 블록, 예시 문장, 링크 등이 포함될 수 있습니다.
+이 경우 검색 결과가 많아지는 대신 사용자가 원하는 글을 찾기 어려워질 수 있다고 판단했습니다.
+
+따라서 초기 검색 범위는 블로그 탐색에 직접적인 제목과 태그로 제한했습니다.
+
+현재 검색 대상:
+
+- 포스트 제목
+- 태그명
+
+본문 검색은 포스트 수가 많아지고 검색 필요성이 커졌을 때 full-text search나 별도 검색 최적화를 고려하는 방향으로 남겨두었습니다.
+
+---
+
+### 6. 성능 개선 리팩토링
+
+기능 구현 이후 Lighthouse Performance 점수를 기준으로 성능 병목을 점검했습니다.
+
+초기에는 큰 구조 변경보다 회귀 위험이 낮고 효과가 명확한 작업부터 진행했습니다.
+
+주요 점검/개선 대상:
+
+```txt
+- 중복 Supabase 조회 점검
+- PostSummary mapper 공용화
+- 공개 포스트 목록 조회 로직 정리
+- 태그 조회 병렬화
+- 불필요한 진단용 좋아요 API 쿼리 제거
+- 과도한 서버 로그 제거
+- Client Component 범위 점검
+- 이미지 LCP 최적화 검토
+- 댓글 렌더링 구조 점검
+```
+
+---
+
+## 폴더 구조
+
+```txt
+src/
+├── app/
+│   ├── (admin)/
+│   │   └── 관리자 전용 페이지
+│   │
+│   ├── (auth)/
+│   │   └── 로그인/인증 관련 페이지
+│   │
+│   ├── (public)/
+│   │   └── 공개 페이지
+│   │       ├── 메인 페이지
+│   │       ├── 포스트 상세
+│   │       └── 검색 페이지
+│   │
+│   ├── api/
+│   │   └── API route
+│   │
+│   ├── auth/
+│   │   └── OAuth callback 처리
+│   │
+│   ├── globals.css
+│   └── layout.tsx
+│
+├── components/
+│   ├── layout/
+│   │   └── Header, Footer 등 레이아웃 컴포넌트
+│   │
+│   ├── providers/
+│   │   └── ThemeProvider, QueryProvider 등
+│   │
+│   └── ui/
+│       └── 공통 UI 컴포넌트
+│
+├── constants/
+│   ├── routes.ts
+│   └── site.ts
+│
+├── features/
+│   ├── auth/
+│   │   └── 인증 관련 로직
+│   │
+│   ├── comments/
+│   │   ├── actions/
+│   │   ├── components/
+│   │   └── lib/
+│   │
+│   └── posts/
+│       ├── actions/
+│       ├── components/
+│       ├── hooks/
+│       ├── lib/
+│       ├── stores/
+│       └── types/
+│
+├── hooks/
+├── lib/
+├── styles/
+├── types/
+└── utils/
+```
+
+## 향후 개선 예정
+
+- 태그 count 계산 최적화
+- 댓글 렌더링 구조 개선
+- 검색 성능 개선
+- Markdown 이미지 최적화
+- 관리자 대시보드 개선
+- 포스트 draft 기능 고도화
+- 테스트 코드 추가
+
+---
+
+## AI 활용 방식
+
+이 프로젝트는 AI 도구(Codex)를 활용해 기능 단위로 설계 및 구현했습니다.
+
+AI를 단순히 전체 코드를 한 번에 생성하는 방식으로 사용하지 않았습니다.  
+기능을 한 번에 크게 요청하면 구현 범위가 넓어지고, 코드 변경 이유와 오류 원인을 추적하기 어려워질 수 있다고 판단했습니다.
+
+그래서 각 기능을 작은 단위로 나누어 다음 흐름으로 개발했습니다.
+
+```txt
+요구사항 정리
+→ 작업 범위 제한
+→ 구현 프롬프트 작성
+→ 코드 생성
+→ 동작 검증
+→ 문제 원인 분석
+→ 리팩토링
+```
+
+예를 들어 댓글 기능은 한 번에 전체를 구현하지 않고, 댓글 조회, 댓글 작성, 대댓글 조회, 대댓글 작성 단계로 나누어 구현했습니다.
+
+성능 개선 작업도 바로 코드를 수정하지 않고, 먼저 Lighthouse 결과와 코드 구조를 진단한 뒤 회귀 위험이 낮은 작업부터 진행했습니다.
+
+이 과정을 통해 AI가 생성한 코드를 그대로 사용하는 것이 아니라, 기능 단위로 검수하고 프로젝트 구조에 맞게 조정하는 방식으로 개발했습니다.
+
+AI 작업 규칙과 프로젝트 개발 기준은 `AGENTS.md`에 정리되어 있습니다.
+
+---
