@@ -12,7 +12,6 @@ import { AppQueryProvider } from "@/components/providers/app-query-provider";
 import { SITE_CONFIG } from "@/constants/site";
 import { PostCommentsSection } from "@/features/comments/components/post-comments-section";
 import { getPostComments } from "@/features/comments/lib/get-post-comments";
-import { getAdminSession } from "@/features/auth/lib/admin-access";
 import { DeletePostButton } from "@/features/posts/components/delete-post-button";
 import { LikeButton } from "@/features/posts/components/like-button";
 import { PostViewTracker } from "@/features/posts/components/post-view-tracker";
@@ -31,6 +30,7 @@ interface PersistedPost {
   initialIsLiked: boolean;
   commentsCount: number;
   viewerUserId: string | null;
+  isAdmin: boolean;
   tags: string[];
   tagsLoadError: string | null;
 }
@@ -85,6 +85,15 @@ function readId(value: unknown): string | null {
   }
 
   return null;
+}
+
+function readTrimmedString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
 }
 
 function isMissingDeletedAtColumnError(error: PostgrestError): boolean {
@@ -283,7 +292,7 @@ async function getPostFromDatabase(
         ? authData.user.id
         : null;
 
-    const [loadedTags, likedRow] = await Promise.all([
+    const [loadedTags, likedRow, profileRow] = await Promise.all([
       loadPostTagNamesByPostIds({
         supabase,
         postIds: [post.id],
@@ -296,18 +305,38 @@ async function getPostFromDatabase(
             .eq("user_id", viewerUserId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      viewerUserId
+        ? supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", viewerUserId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
     const tags = loadedTags.ok
       ? (loadedTags.tagNamesByPostId.get(post.id) ?? [])
       : [];
     const tagsLoadError = loadedTags.ok ? null : loadedTags.message;
+    const profile =
+      profileRow.data && typeof profileRow.data === "object"
+        ? (profileRow.data as Record<string, unknown>)
+        : null;
+    const isAdmin = readTrimmedString(profile?.role) === "admin";
 
     if (likedRow.error) {
       console.error("[getPostFromDatabase] post like state query failed", {
         message: likedRow.error.message,
         code: likedRow.error.code,
         postId: post.id,
+        userId: viewerUserId,
+      });
+    }
+
+    if (profileRow.error) {
+      console.error("[getPostFromDatabase] profile role query failed", {
+        message: profileRow.error.message,
+        code: profileRow.error.code,
         userId: viewerUserId,
       });
     }
@@ -323,6 +352,7 @@ async function getPostFromDatabase(
       initialIsLiked: Boolean(likedRow.data),
       commentsCount: post.commentsCount,
       viewerUserId,
+      isAdmin,
       tags,
       tagsLoadError,
     };
@@ -339,10 +369,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound();
   }
 
-  const [commentsResult, adminSession] = await Promise.all([
-    getPostComments(persistedPost.id),
-    getAdminSession(),
-  ]);
+  const commentsResult = await getPostComments(persistedPost.id);
   const visibleCommentsCount = commentsResult.errorMessage
     ? persistedPost.commentsCount
     : commentsResult.comments.reduce(
@@ -357,7 +384,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         <header className="space-y-3 border-b pb-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h1 className="text-3xl font-bold">{persistedPost.title}</h1>
-            {adminSession.isAdmin ? (
+            {persistedPost.isAdmin ? (
               <div className="flex flex-wrap items-start gap-2 self-start">
                 <Button
                   variant="outline"
