@@ -36,13 +36,14 @@ export function ThemeToggle() {
   return (
     <Button
       aria-label={isDark ? "라이트 모드로 변경" : "다크 모드로 변경"}
+      aria-pressed={isDark}
       size="icon-sm"
       title={isDark ? "라이트 모드로 변경" : "다크 모드로 변경"}
       type="button"
       variant="ghost"
       onClick={() => setTheme(nextTheme)}
     >
-      {isDark ? <Sun /> : <Moon />}
+      {isDark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
     </Button>
   );
 }

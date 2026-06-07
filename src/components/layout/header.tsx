@@ -13,7 +13,11 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
       <div className="relative mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-        <Link href={ROUTES.home} className="flex items-center gap-2">
+        <Link
+          href={ROUTES.home}
+          aria-label="홈으로 이동"
+          className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           <div className="font-bold text-xl">wjinss.log</div>
         </Link>
 
@@ -23,7 +27,7 @@ export async function Header() {
           {adminSession.isAdmin && (
             <Link
               href={ROUTES.newPost}
-              className={`text-sm border-gray-500 transition hover:bg-muted px-2.5 py-1 border rounded-xl`}
+              className="rounded-xl border border-gray-500 px-2.5 py-1 text-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               새 글 작성
             </Link>
@@ -34,7 +38,7 @@ export async function Header() {
               href={ROUTES.profile}
               aria-label="내 프로필"
               title="내 프로필"
-              className="inline-flex items-center justify-center transition hover:opacity-90"
+              className="inline-flex items-center justify-center rounded-full transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <UserAvatar
                 src={viewer.avatarUrl}

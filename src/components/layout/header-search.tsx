@@ -78,7 +78,7 @@ export function HeaderSearch() {
         title="검색"
         onClick={() => setIsOpen(true)}
       >
-        <SearchIcon />
+        <SearchIcon aria-hidden="true" />
       </Button>
     );
   }
@@ -94,10 +94,14 @@ export function HeaderSearch() {
       onSubmit={handleSubmit}
     >
       <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none md:w-64">
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <SearchIcon
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+        />
         <input
           ref={inputRef}
           type="search"
+          aria-label="검색어"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={handleInputKeyDown}
@@ -119,7 +123,7 @@ export function HeaderSearch() {
         title="검색"
         disabled={!canSearch}
       >
-        <SearchIcon />
+        <SearchIcon aria-hidden="true" />
       </Button>
 
       <Button
@@ -130,7 +134,7 @@ export function HeaderSearch() {
         title="닫기"
         onClick={closeSearch}
       >
-        <X />
+        <X aria-hidden="true" />
       </Button>
     </form>
   );

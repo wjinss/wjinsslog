@@ -23,6 +23,7 @@ export function ImageFileUpload({
   id,
   name,
   buttonLabel,
+  hintText,
   accept = DEFAULT_ACCEPT,
   required = false,
   autoSubmitOnSelect = false,
@@ -31,6 +32,7 @@ export function ImageFileUpload({
 }: ImageFilePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const hintId = hintText ? `${id}-hint` : undefined;
 
   useEffect(() => {
     return () => {
@@ -73,6 +75,7 @@ export function ImageFileUpload({
         type="file"
         accept={accept}
         required={required}
+        aria-describedby={hintId}
         className="sr-only"
         onChange={handleFileChange}
       />
@@ -94,10 +97,16 @@ export function ImageFileUpload({
         type="button"
         variant="outline"
         size="sm"
+        aria-describedby={hintId}
         onClick={openFileDialog}
       >
         {buttonLabel}
       </Button>
+      {hintText ? (
+        <p id={hintId} className="text-xs text-muted-foreground">
+          {hintText}
+        </p>
+      ) : null}
     </div>
   );
 }

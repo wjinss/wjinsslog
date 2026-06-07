@@ -25,6 +25,7 @@ export function PostCommentReplyPanel({
 }: PostCommentReplyPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const repliesCount = replies.length;
+  const panelId = `reply-panel-${parentCommentId}`;
   const buttonLabel =
     repliesCount > 0 ? `${repliesCount}개의 답글` : "답글 달기";
 
@@ -34,11 +35,12 @@ export function PostCommentReplyPanel({
         type="button"
         className="text-xs mt-4 font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         aria-expanded={isOpen}
+        aria-controls={panelId}
         onClick={() => setIsOpen((current) => !current)}
       >
         {buttonLabel}
       </button>
-      <div className="rounded-xl bg-muted/40 dark:bg-muted/60">
+      <div id={panelId} className="rounded-xl bg-muted/40 dark:bg-muted/60">
         {isOpen ? (
           <div className="mt-3 space-y-3 py-4 px-6">
             {repliesCount > 0 ? (

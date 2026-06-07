@@ -18,7 +18,7 @@ export function OAuthSignInButton({
     <form action={action}>
       <Button
         type="submit"
-        className="inline-flex h-10 w-full items-center rounded-[min(var(--radius-md),10px)] justify-center gap-2 border px-4 text-sm font-medium hover:bg-muted"
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[min(var(--radius-md),10px)] border px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <Image src={icon} alt="" width={iconSize} height={iconSize} />
         {label}

@@ -397,7 +397,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                     />
                   }
                 >
-                  <Pencil />
+                  <Pencil aria-hidden="true" />
                   수정
                 </Button>
                 <DeletePostButton

@@ -52,8 +52,11 @@ export function SignInForm() {
         <input
           id="email"
           type="email"
+          required
+          aria-invalid={errors.email ? "true" : "false"}
+          aria-describedby={errors.email ? "email-error" : undefined}
           autoComplete="email"
-          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
+          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
           placeholder="you@example.com"
           {...register("email", {
             required: "이메일을 입력해주세요.",
@@ -64,7 +67,9 @@ export function SignInForm() {
           })}
         />
         {errors.email ? (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+          <p id="email-error" className="text-sm text-destructive">
+            {errors.email.message}
+          </p>
         ) : null}
       </div>
 
@@ -75,8 +80,11 @@ export function SignInForm() {
         <input
           id="password"
           type="password"
+          required
+          aria-invalid={errors.password ? "true" : "false"}
+          aria-describedby={errors.password ? "password-error" : undefined}
           autoComplete="current-password"
-          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
+          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
           placeholder="비밀번호"
           {...register("password", {
             required: "비밀번호를 입력해주세요.",
@@ -87,12 +95,17 @@ export function SignInForm() {
           })}
         />
         {errors.password ? (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p id="password-error" className="text-sm text-destructive">
+            {errors.password.message}
+          </p>
         ) : null}
       </div>
 
       {serverError ? (
-        <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {serverError}
         </p>
       ) : null}

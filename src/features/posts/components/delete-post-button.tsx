@@ -67,9 +67,10 @@ export function DeletePostButton({
       size="sm"
       onClick={handleDeleteClick}
       disabled={isPending}
+      aria-busy={isPending}
       aria-label={`${title} 삭제하기`}
     >
-      <Trash2 />
+      <Trash2 aria-hidden="true" />
       {isPending ? "삭제 중" : "삭제"}
     </Button>
   );

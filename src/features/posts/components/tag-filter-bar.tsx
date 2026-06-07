@@ -45,6 +45,7 @@ export function TagFilterBar({
       <div className={listClassName}>
         <Link
           href="/"
+          aria-current={!activeTag ? "page" : undefined}
           className={cn(
             linkClassName,
             !activeTag
@@ -63,6 +64,7 @@ export function TagFilterBar({
             <Link
               key={tag}
               href={`/?tag=${encodeURIComponent(tag)}`}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 linkClassName,
                 isActive

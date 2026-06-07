@@ -62,11 +62,16 @@ export function PostCommentReplyForm({
         id={`reply-content-${parentCommentId}`}
         name="content"
         rows={3}
+        aria-describedby={
+          state.message ? `reply-message-${parentCommentId}` : undefined
+        }
         placeholder="답글을 입력해주세요."
-        className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-0 transition focus:border-primary"
+        className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
       />
       {state.message ? (
         <p
+          id={`reply-message-${parentCommentId}`}
+          role={state.status === "error" ? "alert" : "status"}
           className={
             state.status === "error"
               ? "text-xs text-destructive"

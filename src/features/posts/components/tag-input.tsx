@@ -148,7 +148,7 @@ export function TagInput({
             type="text"
             value={typeof field.value === "string" ? field.value : ""}
             placeholder={placeholder}
-            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             onBlur={field.onBlur}
             onChange={(event) => {
               if (isComposing || readIsComposing(event.nativeEvent)) {

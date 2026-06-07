@@ -66,15 +66,16 @@ export function PostCommentsSection({
             <input type="hidden" name="postSlug" value={postSlug} />
 
             <div className="space-y-1.5">
-              <label htmlFor="content" className="text-sm font-medium">
-                <textarea
-                  id="content"
-                  name="content"
-                  rows={4}
-                  placeholder="댓글을 입력해주세요."
-                  className="min-h-28 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-0 transition focus:border-primary"
-                />
+              <label htmlFor="comment-content" className="sr-only">
+                댓글 내용
               </label>
+              <textarea
+                id="comment-content"
+                name="content"
+                rows={4}
+                placeholder="댓글을 입력해주세요."
+                className="min-h-28 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
+              />
             </div>
             <Button type="submit" disabled={pending} className="w-full h-10">
               {pending ? "작성 중..." : "댓글 작성"}
@@ -94,9 +95,14 @@ export function PostCommentsSection({
       </div>
 
       {errorMessage ? (
-        <p className="mt-4 text-sm text-destructive">{errorMessage}</p>
+        <p role="alert" className="mt-4 text-sm text-destructive">
+          {errorMessage}
+        </p>
       ) : comments.length === 0 ? (
-        <p className="mt-4 rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
+        <p
+          role="status"
+          className="mt-4 rounded-lg bg-muted/40 px-4 py-5 text-sm text-muted-foreground"
+        >
           등록된 댓글이 없습니다.
         </p>
       ) : (

@@ -41,7 +41,7 @@ export function NewPostForm() {
             required
             maxLength={150}
             placeholder="제목을 입력해주세요"
-            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             {...register("title")}
           />
         </div>
@@ -55,7 +55,7 @@ export function NewPostForm() {
             type="text"
             maxLength={150}
             placeholder="예: nextjs-supabase-guide"
-            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             {...register("slug")}
           />
         </div>
@@ -66,7 +66,7 @@ export function NewPostForm() {
           </label>
           <select
             id="status"
-            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             {...register("status")}
           >
             <option value="draft">임시저장</option>
@@ -83,7 +83,7 @@ export function NewPostForm() {
             rows={3}
             maxLength={500}
             placeholder="목록/미리보기에 노출할 요약을 입력해주세요"
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
+            className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             {...register("excerpt")}
           />
         </div>

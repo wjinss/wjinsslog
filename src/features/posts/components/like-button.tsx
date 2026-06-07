@@ -57,12 +57,13 @@ export function LikeButton({
       onClick={handleClick}
     >
       <Heart
+        aria-hidden="true"
         className={cn(
           "size-4 transition-transform duration-150",
           isLiked ? "fill-current" : "fill-none",
         )}
       />
-      <span>{likesCount}</span>
+      <span aria-live="polite">{likesCount}</span>
       <span className="sr-only">
         {isPending
           ? "좋아요 처리 중"

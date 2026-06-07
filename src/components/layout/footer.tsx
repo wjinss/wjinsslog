@@ -9,8 +9,9 @@ export function Footer() {
           <Link
             href="https://github.com/wjinss"
             target="_blank"
-            rel="noreferrer"
-            className="text-muted-foreground p-2 hover:text-foreground transition-colors"
+            rel="noopener noreferrer"
+            aria-label="GitHub 프로필로 이동"
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <svg
               className="h-5 w-5"
@@ -27,7 +28,8 @@ export function Footer() {
           </Link>
           <Link
             href="mailto:aastu4343@gmail.com"
-            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="이메일 보내기"
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <svg
               className="h-5 w-5"

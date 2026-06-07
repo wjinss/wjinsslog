@@ -53,14 +53,19 @@ export function PostCard({ post, imagePriority = false }: PostCardProps) {
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <HeartIcon className="h-4 w-4" />
+            <HeartIcon aria-hidden="true" className="h-4 w-4" />
+            <span className="sr-only">좋아요 </span>
             {post.likesCount}
           </span>
           <span className="flex items-center gap-1">
-            <Eye className="h-4 w-4" /> {post.viewsCount}
+            <Eye aria-hidden="true" className="h-4 w-4" />
+            <span className="sr-only">조회수 </span>
+            {post.viewsCount}
           </span>
           <span className="flex items-center gap-1">
-            <MessageCircleMore className="h-4 w-4" /> {post.commentsCount}
+            <MessageCircleMore aria-hidden="true" className="h-4 w-4" />
+            <span className="sr-only">댓글 </span>
+            {post.commentsCount}
           </span>
           <span className="flex items-center gap-2">
             {formatTimeAgo(post.createdAt)}

@@ -48,7 +48,7 @@ export function EditPostForm({ post }: EditPostFormProps) {
             type="text"
             required
             maxLength={150}
-            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             {...register("title")}
           />
         </div>
@@ -61,7 +61,7 @@ export function EditPostForm({ post }: EditPostFormProps) {
             id="thumbnailUrl"
             type="url"
             placeholder="https://example.com/thumbnail.png"
-            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
             {...register("thumbnailUrl")}
           />
         </div>

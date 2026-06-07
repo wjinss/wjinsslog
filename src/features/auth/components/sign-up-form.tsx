@@ -69,8 +69,11 @@ export function SignUpForm() {
         <input
           id="email"
           type="email"
+          required
+          aria-invalid={errors.email ? "true" : "false"}
+          aria-describedby={errors.email ? "email-error" : undefined}
           autoComplete="email"
-          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
+          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
           placeholder="abc@abc.io"
           {...register("email", {
             required: "이메일을 입력해주세요.",
@@ -81,7 +84,9 @@ export function SignUpForm() {
           })}
         />
         {errors.email ? (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+          <p id="email-error" className="text-sm text-destructive">
+            {errors.email.message}
+          </p>
         ) : null}
       </div>
 
@@ -93,10 +98,19 @@ export function SignUpForm() {
           id="displayName"
           type="text"
           autoComplete="name"
-          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
+          aria-invalid={errors.displayName ? "true" : "false"}
+          aria-describedby={
+            errors.displayName ? "displayName-error" : undefined
+          }
+          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
           placeholder="이름을 입력해주세요"
           {...register("displayName")}
         />
+        {errors.displayName ? (
+          <p id="displayName-error" className="text-sm text-destructive">
+            {errors.displayName.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-1.5">
@@ -106,8 +120,11 @@ export function SignUpForm() {
         <input
           id="password"
           type="password"
+          required
+          aria-invalid={errors.password ? "true" : "false"}
+          aria-describedby={errors.password ? "password-error" : undefined}
           autoComplete="new-password"
-          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
+          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
           placeholder="6자 이상"
           {...register("password", {
             required: "비밀번호를 입력해주세요.",
@@ -118,7 +135,9 @@ export function SignUpForm() {
           })}
         />
         {errors.password ? (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p id="password-error" className="text-sm text-destructive">
+            {errors.password.message}
+          </p>
         ) : null}
       </div>
 
@@ -129,8 +148,13 @@ export function SignUpForm() {
         <input
           id="passwordConfirm"
           type="password"
+          required
+          aria-invalid={errors.passwordConfirm ? "true" : "false"}
+          aria-describedby={
+            errors.passwordConfirm ? "passwordConfirm-error" : undefined
+          }
           autoComplete="new-password"
-          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary"
+          className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none ring-0 transition focus:border-primary focus-visible:ring-2 focus-visible:ring-ring/50"
           placeholder="비밀번호 재입력"
           {...register("passwordConfirm", {
             required: "비밀번호 확인을 입력해주세요.",
@@ -139,7 +163,7 @@ export function SignUpForm() {
           })}
         />
         {errors.passwordConfirm ? (
-          <p className="text-sm text-destructive">
+          <p id="passwordConfirm-error" className="text-sm text-destructive">
             {errors.passwordConfirm.message}
           </p>
         ) : null}
@@ -147,6 +171,7 @@ export function SignUpForm() {
 
       {serverMessage ? (
         <p
+          role={isServerError ? "alert" : "status"}
           className={`rounded-lg px-3 py-2 text-sm ${
             isServerError
               ? "bg-destructive/10 text-destructive"
