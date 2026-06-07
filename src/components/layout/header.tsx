@@ -18,7 +18,7 @@ export async function Header() {
           aria-label="홈으로 이동"
           className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <div className="font-bold text-xl">wjinss.log</div>
+          <span className="text-xl font-bold">wjinss.log</span>
         </Link>
 
         <div className="flex items-center gap-4">

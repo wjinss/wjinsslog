@@ -39,17 +39,18 @@ export function PostCard({ post, imagePriority = false }: PostCardProps) {
           </p>
         </Link>
 
-        <div className="flex flex-wrap gap-2">
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
           {post.tags.map((tag) => (
-            <Link
-              key={tag}
-              href={`/?tag=${encodeURIComponent(tag)}`}
-              className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
-            >
-              {tag}
-            </Link>
+            <li key={tag} className="m-0 p-0">
+              <Link
+                href={`/?tag=${encodeURIComponent(tag)}`}
+                className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
+              >
+                {tag}
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">

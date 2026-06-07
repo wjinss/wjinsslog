@@ -430,25 +430,24 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               {persistedPost.tagsLoadError}
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
               {persistedPost.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-secondary px-2.5 py-1 text-xs"
-                >
-                  {tag}
-                </span>
+                <li key={tag} className="m-0 p-0">
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">
+                    {tag}
+                  </span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </header>
 
-        <section className="rounded-xl border p-6">
-          <article className="markdown-body prose max-w-none">
+        <section aria-label="본문" className="rounded-xl border p-6">
+          <div className="markdown-body prose max-w-none">
             <ReactMarkdown components={{ img: MarkdownImage }}>
               {persistedPost.contentMd}
             </ReactMarkdown>
-          </article>
+          </div>
         </section>
 
         <PostCommentsSection

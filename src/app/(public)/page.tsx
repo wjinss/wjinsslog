@@ -84,9 +84,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <TagFilterBar tags={tags} activeTag={activeTag} variant="sidebar" />
         </aside>
 
-        <main className="min-w-0 xl:col-start-2 xl:row-start-2">
+        <section
+          aria-label="포스트 목록"
+          className="min-w-0 xl:col-start-2 xl:row-start-2"
+        >
           <PostFeed posts={posts} />
-        </main>
+        </section>
       </div>
     </PageContainer>
   );
