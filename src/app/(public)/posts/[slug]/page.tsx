@@ -53,6 +53,8 @@ interface PostDetailSource {
   commentsCount: number;
 }
 
+const POST_DESCRIPTION_MAX_LENGTH = 155;
+
 function MarkdownImage({
   alt = "",
   loading = "lazy",
@@ -96,35 +98,21 @@ function readTrimmedString(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-function isMissingDeletedAtColumnError(error: PostgrestError): boolean {
-  const message = error.message.toLowerCase();
-
-  return (
-    error.code === "42703" ||
-    error.code === "PGRST204" ||
-    (message.includes("deleted_at") && message.includes("column"))
-  );
-}
-
 async function selectPostBySlug({
   supabase,
   slug,
-  excludeDeleted,
 }: {
   supabase: SupabaseClient;
   slug: string;
-  excludeDeleted: boolean;
 }): Promise<{ data: unknown; error: PostgrestError | null }> {
-  let postQuery = supabase
+  const postQuery = supabase
     .from("posts")
     .select(
       "id, slug, title, excerpt, thumbnail_url, content_md, created_at, views_count, likes_count, comments_count",
     )
-    .eq("slug", slug);
-
-  if (excludeDeleted) {
-    postQuery = postQuery.is("deleted_at", null);
-  }
+    .eq("slug", slug)
+    .eq("status", "published")
+    .is("deleted_at", null);
 
   const { data, error } = await postQuery.maybeSingle();
   return { data, error };
@@ -137,39 +125,71 @@ async function loadPostBySlug({
   supabase: SupabaseClient;
   slug: string;
 }): Promise<{ data: unknown; error: PostgrestError | null }> {
-  const softDeleteAwareResult = await selectPostBySlug({
+  return selectPostBySlug({
     supabase,
     slug,
-    excludeDeleted: true,
   });
-
-  if (
-    softDeleteAwareResult.error &&
-    isMissingDeletedAtColumnError(softDeleteAwareResult.error)
-  ) {
-    return selectPostBySlug({
-      supabase,
-      slug,
-      excludeDeleted: false,
-    });
-  }
-
-  return softDeleteAwareResult;
 }
 
 function createPostDescription({
+  contentMd,
   excerpt,
   title,
 }: {
+  contentMd: string;
   excerpt: string | null;
   title: string;
 }): string {
   const fallback = `${title} 글을 ${SITE_CONFIG.name}에서 읽어보세요.`;
-  const description = excerpt ?? fallback;
+  const description =
+    stripMarkdownForDescription(excerpt) ??
+    stripMarkdownForDescription(contentMd) ??
+    fallback;
 
-  return description.length > 155
-    ? `${description.slice(0, 152).trimEnd()}...`
+  return description.length > POST_DESCRIPTION_MAX_LENGTH
+    ? `${description.slice(0, POST_DESCRIPTION_MAX_LENGTH - 3).trimEnd()}...`
     : description;
+}
+
+function stripMarkdownForDescription(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const plainText = value
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/<\/?[^>]+>/g, " ")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^[\s>*+-]+/gm, "")
+    .replace(/\*\*|__|\*|_|~~/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return plainText.length > 0 ? plainText : null;
+}
+
+function createMetadataImageUrl(thumbnailUrl: string | null): string {
+  const fallbackImage = SITE_CONFIG.ogImage;
+  const normalizedThumbnail = thumbnailUrl?.trim();
+
+  if (!normalizedThumbnail) {
+    return fallbackImage;
+  }
+
+  try {
+    const parsedUrl = new URL(normalizedThumbnail);
+
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:"
+      ? parsedUrl.toString()
+      : fallbackImage;
+  } catch {
+    return normalizedThumbnail.startsWith("/")
+      ? normalizedThumbnail
+      : `/${normalizedThumbnail}`;
+  }
 }
 
 function mapPostDetailSource(data: unknown): PostDetailSource | null {
@@ -195,10 +215,11 @@ function mapPostDetailSource(data: unknown): PostDetailSource | null {
     title,
     excerpt,
     description: createPostDescription({
+      contentMd,
       excerpt,
       title,
     }),
-    thumbnailUrl: readString(row.thumbnail_url),
+    thumbnailUrl: readTrimmedString(row.thumbnail_url),
     contentMd,
     createdAt: readString(row.created_at),
     viewsCount: readNumber(row.views_count),
@@ -239,7 +260,7 @@ export async function generateMetadata({
   }
 
   const postUrl = `/posts/${post.slug}`;
-  const imageUrl = post.thumbnailUrl ?? SITE_CONFIG.ogImage;
+  const imageUrl = createMetadataImageUrl(post.thumbnailUrl);
 
   return {
     title: post.title,
