@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { cache, createElement, type ComponentProps } from "react";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
 import { Pencil } from "lucide-react";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
@@ -14,6 +13,7 @@ import { PostCommentsSection } from "@/features/comments/components/post-comment
 import { getPostComments } from "@/features/comments/lib/get-post-comments";
 import { DeletePostButton } from "@/features/posts/components/delete-post-button";
 import { LikeButton } from "@/features/posts/components/like-button";
+import { MarkdownRenderer } from "@/features/posts/components/markdown-renderer";
 import { PostViewTracker } from "@/features/posts/components/post-view-tracker";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -54,20 +54,6 @@ interface PostDetailSource {
 }
 
 const POST_DESCRIPTION_MAX_LENGTH = 155;
-
-function MarkdownImage({
-  alt = "",
-  loading = "lazy",
-  decoding = "async",
-  ...props
-}: ComponentProps<"img">) {
-  return createElement("img", {
-    ...props,
-    alt,
-    loading,
-    decoding,
-  });
-}
 
 function readString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -399,9 +385,9 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       );
 
   return (
-    <PageContainer>
+    <PageContainer className="max-w-220">
       <PostViewTracker postId={persistedPost.id} />
-      <article className="mx-auto max-w-3xl space-y-6">
+      <article className="mx-auto w-full space-y-6">
         <header className="space-y-3 border-b pb-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h1 className="text-3xl font-bold">{persistedPost.title}</h1>
@@ -464,11 +450,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         </header>
 
         <section aria-label="본문" className="rounded-xl border p-6">
-          <div className="markdown-body prose max-w-none">
-            <ReactMarkdown components={{ img: MarkdownImage }}>
-              {persistedPost.contentMd}
-            </ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={persistedPost.contentMd} />
         </section>
 
         <PostCommentsSection

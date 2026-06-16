@@ -10,6 +10,7 @@ import {
   uploadPostContentImage,
   type UploadPostContentImageParams,
 } from "@/features/posts/lib/upload-post-content-image";
+import { MarkdownRenderer } from "@/features/posts/components/markdown-renderer";
 import type { NewPostFormValues } from "@/features/posts/types/new-post-form";
 
 interface MarkdownEditorProps {
@@ -148,6 +149,7 @@ export function MarkdownEditor({
         el: rootRef.current,
         initialEditType: "markdown",
         previewStyle: "vertical",
+        hideModeSwitch: true,
         height,
         initialValue: initialValueRef.current,
         placeholder,
@@ -178,10 +180,23 @@ export function MarkdownEditor({
   ]);
 
   return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium">{label}</label>
-      <div className="overflow-hidden rounded-lg border bg-background">
-        <div ref={rootRef} />
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">{label}</label>
+        <div className="markdown-editor-input overflow-hidden rounded-lg border bg-background">
+          <div ref={rootRef} />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium">미리보기</p>
+        <div
+          className="overflow-auto rounded-lg border bg-background p-4"
+          style={{ minHeight: height }}
+        >
+          <MarkdownRenderer
+            content={typeof contentMd === "string" ? contentMd : ""}
+          />
+        </div>
       </div>
       <input
         type="hidden"
