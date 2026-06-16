@@ -15,7 +15,7 @@ export function PostFeed({ posts }: PostFeedProps) {
   }
 
   return (
-    <section className="grid gap-4 md:grid-cols-1">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
       {posts.map((post, index) => (
         <PostCard key={post.id} post={post} imagePriority={index === 0} />
       ))}

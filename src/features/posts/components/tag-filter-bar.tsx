@@ -24,7 +24,7 @@ export function TagFilterBar({
 }: TagFilterBarProps) {
   const containerClassName =
     variant === "sidebar"
-      ? "flex gap-4 overflow-x-auto xl:max-h-[calc(100vh-7rem)] xl:flex-col xl:items-start xl:overflow-x-visible xl:overflow-y-auto xl:bg-card xl:px-5"
+      ? "flex gap-4 overflow-x-auto xl:max-h-[calc(100vh-7rem)] xl:flex-col xl:items-start xl:overflow-x-visible xl:overflow-y-auto xl:px-5"
       : "space-y-2";
   const listClassName =
     variant === "sidebar"

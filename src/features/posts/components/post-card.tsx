@@ -11,7 +11,7 @@ interface PostCardProps {
 }
 
 const POST_CARD_THUMBNAIL_SIZES =
-  "(min-width: 768px) 624px, calc(100vw - 2rem)";
+  "(min-width: 1280px) 624px, (min-width: 768px) calc((100vw - 4rem) / 2), calc(100vw - 2rem)";
 
 export function PostCard({ post, imagePriority = false }: PostCardProps) {
   return (
@@ -39,18 +39,20 @@ export function PostCard({ post, imagePriority = false }: PostCardProps) {
           </p>
         </Link>
 
-        <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-          {post.tags.map((tag) => (
-            <li key={tag} className="m-0 p-0">
-              <Link
-                href={`/?tag=${encodeURIComponent(tag)}`}
-                className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
-              >
-                {tag}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {post.tags.length > 0 ? (
+          <ul className="m-0 flex list-none flex-wrap gap-2 p-0 pb-2">
+            {post.tags.map((tag) => (
+              <li key={tag} className="m-0 p-0">
+                <Link
+                  href={`/?tag=${encodeURIComponent(tag)}`}
+                  className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
+                >
+                  {tag}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
