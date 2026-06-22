@@ -29,6 +29,7 @@
   margin-top: 1.4em;
   margin-bottom: 0.6em;
   font-weight: 800;
+  scroll-margin-top: 6rem;
 }
 
 .markdown-body :is(h1, h2, h3, h4, h5, h6) a {
@@ -70,4 +71,14 @@
 .markdown-editor-input .toastui-editor-md-preview,
 .markdown-editor-input .toastui-editor-md-splitter {
   display: none;
+}
+
+.post-detail-toc {
+  display: none;
+}
+
+@media (min-width: 1324px) {
+  .post-detail-toc {
+    display: block;
+  }
 }
