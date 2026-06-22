@@ -14,8 +14,10 @@ import { getPostComments } from "@/features/comments/lib/get-post-comments";
 import { DeletePostButton } from "@/features/posts/components/delete-post-button";
 import { LikeButton } from "@/features/posts/components/like-button";
 import { MarkdownRenderer } from "@/features/posts/components/markdown-renderer";
+import { PostTableOfContents } from "@/features/posts/components/post-table-of-contents";
 import { PostViewTracker } from "@/features/posts/components/post-view-tracker";
 import { loadPostTagNamesByPostIds } from "@/features/posts/lib/post-tag-relations";
+import { extractPostTableOfContents } from "@/features/posts/lib/table-of-contents";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatTimeAgo } from "@/utils/date";
 
@@ -383,85 +385,89 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         (count, comment) => count + 1 + comment.replies.length,
         0,
       );
+  const tableOfContents = extractPostTableOfContents(persistedPost.contentMd);
 
   return (
     <PageContainer className="max-w-220">
       <PostViewTracker postId={persistedPost.id} />
-      <article className="mx-auto w-full space-y-6">
-        <header className="space-y-3 border-b pb-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <h1 className="text-3xl font-bold">{persistedPost.title}</h1>
-            {persistedPost.isAdmin ? (
-              <div className="flex flex-wrap items-start gap-2 self-start">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  nativeButton={false}
-                  render={
-                    <Link
-                      href={`/edit/${persistedPost.slug}`}
-                      aria-label={`${persistedPost.title} 수정하기`}
-                    />
-                  }
-                >
-                  <Pencil aria-hidden="true" />
-                  수정
-                </Button>
-                <DeletePostButton
+      <div className="relative">
+        <article className="mx-auto w-full space-y-6">
+          <header className="space-y-3 border-b pb-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <h1 className="text-3xl font-bold">{persistedPost.title}</h1>
+              {persistedPost.isAdmin ? (
+                <div className="flex flex-wrap items-start gap-2 self-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        href={`/edit/${persistedPost.slug}`}
+                        aria-label={`${persistedPost.title} 수정하기`}
+                      />
+                    }
+                  >
+                    <Pencil aria-hidden="true" />
+                    수정
+                  </Button>
+                  <DeletePostButton
+                    postId={persistedPost.id}
+                    slug={persistedPost.slug}
+                    title={persistedPost.title}
+                  />
+                </div>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <span>
+                {persistedPost.createdAt
+                  ? formatTimeAgo(persistedPost.createdAt)
+                  : "-"}
+              </span>
+              <span>조회수 {persistedPost.viewsCount}</span>
+              <AppQueryProvider>
+                <LikeButton
                   postId={persistedPost.id}
-                  slug={persistedPost.slug}
-                  title={persistedPost.title}
+                  initialLikesCount={persistedPost.likesCount}
+                  initialIsLiked={persistedPost.initialIsLiked}
+                  viewerUserId={persistedPost.viewerUserId}
                 />
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-            <span>
-              {persistedPost.createdAt
-                ? formatTimeAgo(persistedPost.createdAt)
-                : "-"}
-            </span>
-            <span>조회수 {persistedPost.viewsCount}</span>
-            <AppQueryProvider>
-              <LikeButton
-                postId={persistedPost.id}
-                initialLikesCount={persistedPost.likesCount}
-                initialIsLiked={persistedPost.initialIsLiked}
-                viewerUserId={persistedPost.viewerUserId}
-              />
-            </AppQueryProvider>
-            <span>댓글 {visibleCommentsCount}</span>
-          </div>
-          {persistedPost.tagsLoadError ? (
-            <p className="text-sm text-destructive">
-              {persistedPost.tagsLoadError}
-            </p>
-          ) : (
-            <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-              {persistedPost.tags.map((tag) => (
-                <li key={tag} className="m-0 p-0">
-                  <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">
-                    {tag}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </header>
+              </AppQueryProvider>
+              <span>댓글 {visibleCommentsCount}</span>
+            </div>
+            {persistedPost.tagsLoadError ? (
+              <p className="text-sm text-destructive">
+                {persistedPost.tagsLoadError}
+              </p>
+            ) : (
+              <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                {persistedPost.tags.map((tag) => (
+                  <li key={tag} className="m-0 p-0">
+                    <span className="rounded-full bg-secondary px-2.5 py-1 text-xs">
+                      {tag}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </header>
 
-        <section aria-label="본문" className="rounded-xl border p-6">
-          <MarkdownRenderer content={persistedPost.contentMd} />
-        </section>
+          <section aria-label="본문" className="rounded-xl border p-6">
+            <MarkdownRenderer content={persistedPost.contentMd} />
+          </section>
 
-        <PostCommentsSection
-          postId={persistedPost.id}
-          postSlug={persistedPost.slug}
-          isAuthenticated={Boolean(persistedPost.viewerUserId)}
-          comments={commentsResult.comments}
-          count={visibleCommentsCount}
-          errorMessage={commentsResult.errorMessage}
-        />
-      </article>
+          <PostCommentsSection
+            postId={persistedPost.id}
+            postSlug={persistedPost.slug}
+            isAuthenticated={Boolean(persistedPost.viewerUserId)}
+            comments={commentsResult.comments}
+            count={visibleCommentsCount}
+            errorMessage={commentsResult.errorMessage}
+          />
+        </article>
+        <PostTableOfContents items={tableOfContents} />
+      </div>
     </PageContainer>
   );
 }
